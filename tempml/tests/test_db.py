@@ -26,6 +26,9 @@ from tempml import const
 from tempml import db
 
 
+ML_NAME = "test-%06d"
+
+
 class DbTest(unittest.TestCase):
     """Database API tests"""
 
@@ -39,60 +42,65 @@ class DbTest(unittest.TestCase):
     def test_counter(self):
         self.assertEqual(db.DB.counter.count(), 1)
 
-        ml_id = db.increment_counter()
+        ml_id = db.increase_counter()
         self.assertEqual(ml_id, 1)
 
-        ml_id = db.increment_counter()
+        ml_id = db.increase_counter()
         self.assertEqual(ml_id, 2)
 
     def test_create_ml(self):
         members = ["abc", "def", "ghi"]
 
         for i in range(1,4):
-            ml_id = db.create_ml(members)
-            self.assertEqual(ml_id, i)
-            ml = db.get_ml(ml_id)
-            self.assertEqual(ml['ml_id'], i)
+            ml_name = ML_NAME % db.increase_counter()
+            db.create_ml(ml_name, members)
+            ml = db.get_ml(ml_name)
+            self.assertEqual(ml['ml_name'], ml_name)
             self.assertEqual(ml['members'], members)
             self.assertEqual(ml['status'], const.STATUS_OPEN)
 
     def test_mark_mls_orphaned_and_closed(self):
-        ml1_id = db.create_ml([])
+        ml1_name = ML_NAME % db.increase_counter()
+        db.create_ml(ml1_name, [])
 
         time.sleep(1)
         now = datetime.now()
+
         time.sleep(1)
-        ml2_id = db.create_ml([])
+        ml2_name = ML_NAME % db.increase_counter()
+        db.create_ml(ml2_name, [])
+
         db.mark_mls_orphaned(now)
-        ml1 = db.get_ml(ml1_id)
-        ml2 = db.get_ml(ml2_id)
+        ml1 = db.get_ml(ml1_name)
+        ml2 = db.get_ml(ml2_name)
         self.assertEqual(ml1['status'], const.STATUS_ORPHANED)
         self.assertEqual(ml2['status'], const.STATUS_OPEN)
 
         time.sleep(1)
         db.mark_mls_closed(datetime.now())
-        ml1 = db.get_ml(ml1_id)
-        ml2 = db.get_ml(ml2_id)
+        ml1 = db.get_ml(ml1_name)
+        ml2 = db.get_ml(ml2_name)
         self.assertEqual(ml1['status'], const.STATUS_CLOSED)
         self.assertEqual(ml2['status'], const.STATUS_OPEN)
 
     def test_add_and_del_members(self):
-        ml_id = db.create_ml([])
-        ml = db.get_ml(ml_id)
+        ml_name = ML_NAME % db.increase_counter()
+        db.create_ml(ml_name, [])
+        ml = db.get_ml(ml_name)
         self.assertEqual(ml['members'], [])
 
-        db.add_members(ml_id, ["abc", "def"])
-        ml = db.get_ml(ml_id)
+        db.add_members(ml_name, ["abc", "def"])
+        ml = db.get_ml(ml_name)
         self.assertEqual(ml['members'], ["abc", "def"])
 
-        db.add_members(ml_id, ["abc", "ghi"])
-        ml = db.get_ml(ml_id)
+        db.add_members(ml_name, ["abc", "ghi"])
+        ml = db.get_ml(ml_name)
         self.assertEqual(ml['members'], ["abc", "def", "ghi"])
 
-        db.del_members(ml_id, ["abc", "ghi"])
-        ml = db.get_ml(ml_id)
+        db.del_members(ml_name, ["abc", "ghi"])
+        ml = db.get_ml(ml_name)
         self.assertEqual(ml['members'], ["def"])
 
-        db.del_members(ml_id, ["abc", "def"])
-        ml = db.get_ml(ml_id)
+        db.del_members(ml_name, ["abc", "def"])
+        ml = db.get_ml(ml_name)
         self.assertEqual(ml['members'], [])
