@@ -199,4 +199,6 @@ def get_members(ml_name):
     :rtype: list(str)
     """
     ml = DB.ml.find_one({'ml_name': ml_name})
+    if ml is None:
+        return None
     return ml.get('members', [])
