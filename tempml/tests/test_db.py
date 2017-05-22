@@ -51,7 +51,7 @@ class DbTest(unittest.TestCase):
     def test_create_ml(self):
         members = ["abc", "def", "ghi"]
 
-        for i in range(1,4):
+        for i in range(1, 4):
             ml_name = ML_NAME % db.increase_counter()
             db.create_ml(ml_name, members)
             ml = db.get_ml(ml_name)
