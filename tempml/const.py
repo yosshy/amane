@@ -20,3 +20,8 @@ Constants definition
 STATUS_OPEN = "open"
 STATUS_ORPHANED = "orphaned"
 STATUS_CLOSED = "closed"
+
+SMTP_STATUS_NO_SUCH_ML = "550 No such ML"
+SMTP_STATUS_NOT_MEMBER = "550 Not member"
+SMTP_STATUS_NO_ML_SPECIFIED = "550 No ML specified"
+SMTP_STATUS_CANT_CROSS_POST = "550 Can't cross-post a message"
