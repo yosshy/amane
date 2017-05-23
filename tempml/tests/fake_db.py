@@ -75,6 +75,11 @@ def create_ml(ml_name, members, by):
     :rtype: dict
     """
     logging.debug("fake_db: create_ml")
+    log_dict = {
+        "op": const.OP_CREATE,
+        "by": by,
+        "members": list(members)
+    }
     ml_dict = {
         "ml_name": ml_name,
         "members": members,
@@ -82,6 +87,7 @@ def create_ml(ml_name, members, by):
         "updated": datetime.now(),
         "status": const.STATUS_OPEN,
         "by": by,
+        "logs": [log_dict],
     }
     MLS[ml_name] = ml_dict
     logging.debug("after: %s", ml_dict)
@@ -114,12 +120,17 @@ def mark_mls_orphaned(last_updated, by):
     :rtype: list(dict)
     """
     logging.debug("fake_db: make_mls_orphaned")
+    log_dict = {
+        "op": const.OP_ORPHAN,
+        "by": by,
+    }
     for ml_name, data in MLS.items():
         if data['status'] == const.STATUS_OPEN and \
                 data['updated'] < last_updated:
             data['status'] = const.STATUS_ORPHANED
             data['updated'] = datetime.now()
             data['by'] = by
+            data['logs'].append(log_dict)
 
 
 def mark_mls_closed(last_updated, by):
@@ -135,12 +146,17 @@ def mark_mls_closed(last_updated, by):
     :rtype: list(dict)
     """
     logging.debug("fake_db: make_mls_closed")
+    log_dict = {
+        "op": const.OP_CLOSE,
+        "by": by,
+    }
     for ml_name, data in MLS.items():
         if data['status'] == const.STATUS_ORPHANED and \
                 data['updated'] < last_updated:
             data['status'] = const.STATUS_CLOSED
             data['updated'] = datetime.now()
             data['by'] = by
+            data['logs'].append(log_dict)
 
 
 def add_members(ml_name, members, by):
@@ -159,9 +175,15 @@ def add_members(ml_name, members, by):
     logging.debug("fake_db: add_members")
     ml = MLS[ml_name]
     logging.debug("before: %s", ml)
+    log_dict = {
+        "op": const.OP_ADD_MEMBERS,
+        "by": by,
+        "members": members,
+    }
     ml['members'] |= members
     ml['updated'] = datetime.now()
     ml['by'] = by
+    ml['logs'].append(log_dict)
     logging.debug("after: %s", ml)
 
 
@@ -181,9 +203,15 @@ def del_members(ml_name, members, by):
     logging.warning("fake_db: del_members: %s", members)
     ml = MLS[ml_name]
     logging.warning("before: %s", ml)
+    log_dict = {
+        "op": const.OP_DEL_MEMBERS,
+        "by": by,
+        "members": members,
+    }
     ml['members'] -= members
     ml['updated'] = datetime.now()
     ml['by'] = by
+    ml['logs'].append(log_dict)
     logging.warning("after: %s", ml)
 
 
@@ -201,3 +229,39 @@ def get_members(ml_name):
     if ml_name not in MLS:
         return None
     return MLS[ml_name]['members']
+
+
+def log_post(ml_name, members, by):
+    """
+    Append a log about sending a post to a ML
+    This is an atomic operation.
+
+    :param ml_name: mailing list ID
+    :type ml_name: str
+    :param members: e-mail addresses to add
+    :type members: set(str)
+    :param by: sender's e-mail address
+    :type by: str
+    :rtype: None
+    """
+    log_dict = {
+        "op": const.OP_POST,
+        "by": by,
+    }
+    MLS[ml_name]['logs'].append(log_dict)
+
+
+def get_logs(ml_name):
+    """
+    Show operation logs of a ML
+    This is an atomic operation.
+
+    :param ml_name: mailing list ID
+    :type ml_name: str
+    :return: operation logs
+    :rtype: list[dict]
+    """
+    ml = MLS.get(ml_name)
+    if ml is None:
+        return None
+    return ml['logs']

@@ -87,6 +87,11 @@ def create_ml(ml_name, members, by):
         logging.error(ml)
         return
 
+    log_dict = {
+        "op": const.OP_CREATE,
+        "by": by,
+        "members": list(members)
+    }
     ml_dict = {
         "ml_name": ml_name,
         "members": list(members),
@@ -94,6 +99,7 @@ def create_ml(ml_name, members, by):
         "updated": datetime.now(),
         "status": const.STATUS_OPEN,
         "by": by,
+        "logs": [log_dict]
     }
     DB.ml.insert_one(ml_dict)
 
@@ -124,11 +130,16 @@ def mark_mls_orphaned(last_updated, by):
     :return: ML objects
     :rtype: list(dict)
     """
+    log_dict = {
+        "op": const.OP_ORPHAN,
+        "by": by,
+    }
     DB.ml.update_many({'status': const.STATUS_OPEN,
                        'updated': {'$lt': last_updated}},
                       {'$set': {'status': const.STATUS_ORPHANED,
                                 'updated': datetime.now(),
-                                'by': by}})
+                                'by': by},
+                       '$push': {'logs': log_dict}})
     return DB.ml.find({'status': const.STATUS_ORPHANED})
 
 
@@ -144,11 +155,16 @@ def mark_mls_closed(last_updated, by):
     :return: ML objects
     :rtype: list(dict)
     """
+    log_dict = {
+        "op": const.OP_CLOSE,
+        "by": by,
+    }
     DB.ml.update_many({'status': const.STATUS_ORPHANED,
                        'updated': {'$lt': last_updated}},
                       {'$set': {'status': const.STATUS_CLOSED,
                                 'updated': datetime.now(),
-                                'by': by}})
+                                'by': by},
+                       '$push': {'logs': log_dict}})
     return DB.ml.find({'status': const.STATUS_CLOSED})
 
 
@@ -169,10 +185,16 @@ def add_members(ml_name, members, by):
     logging.debug("before: %s", ml)
     _members = set(ml.get('members', []))
     _members |= members
+    log_dict = {
+        "op": const.OP_ADD_MEMBERS,
+        "by": by,
+        "members": list(members),
+    }
     ml = DB.ml.find_one_and_update({'ml_name': ml_name},
                                    {'$set': {'members': list(_members),
                                              'updated': datetime.now(),
-                                             'by': by}})
+                                             'by': by},
+                                    '$push': {'logs': log_dict}})
     logging.debug("after: %s", ml)
 
 
@@ -193,10 +215,16 @@ def del_members(ml_name, members, by):
     logging.debug("before: %s", ml)
     _members = set(ml.get('members', []))
     _members -= members
+    log_dict = {
+        "op": const.OP_DEL_MEMBERS,
+        "by": by,
+        "members": list(members),
+    }
     ml = DB.ml.find_one_and_update({'ml_name': ml_name},
                                    {'$set': {'members': list(_members),
                                              'updated': datetime.now(),
-                                             'by': by}})
+                                             'by': by},
+                                    '$push': {'logs': log_dict}})
     logging.debug("after: %s", ml)
 
 
@@ -214,3 +242,46 @@ def get_members(ml_name):
     if ml is None:
         return None
     return set(ml.get('members', []))
+
+
+def log_post(ml_name, members, by):
+    """
+    Append a log about sending a post to a ML
+    This is an atomic operation.
+
+    :param ml_name: mailing list ID
+    :type ml_name: str
+    :param members: e-mail addresses to add
+    :type members: set(str)
+    :param by: sender's e-mail address
+    :type by: str
+    :rtype: None
+    """
+    log_dict = {
+        "op": const.OP_POST,
+        "by": by,
+    }
+    ml = DB.ml.find_one_and_update({'ml_name': ml_name},
+                                   {'$set': {'members': list(_members),
+                                             'updated': datetime.now(),
+                                             'by': by},
+                                    '$push': {'logs': log_dict}})
+
+
+def get_logs(ml_name):
+    """
+    Show operation logs of a ML
+    This is an atomic operation.
+
+    :param ml_name: mailing list ID
+    :type ml_name: str
+    :return: operation logs
+    :rtype: list[dict]
+    """
+    ml = DB.ml.find_one({'ml_name': ml_name})
+    if ml is None:
+        return None
+    for log in ml['logs']:
+        if 'members' in log:
+            log['members'] = set(log['members'])
+    return ml['logs']

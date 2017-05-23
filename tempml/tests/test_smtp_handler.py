@@ -81,9 +81,10 @@ class ProcessMessageTest(unittest.TestCase):
     def tearDown(self):
         pass
 
-    def _send_post(self, ml_name, message):
+    def _send_post(self, ml_name, message, mailfrom):
         self.ml_name_arg = ml_name
         self.message_arg = message
+        self.mailfrom_arg = mailfrom
 
     def test_no_to_cc(self):
         msg = 'From: Test1 <test1@example.com>\n' \
@@ -433,9 +434,10 @@ class ProcessMessageWithAdminsTest(unittest.TestCase):
     def tearDown(self):
         pass
 
-    def _send_post(self, ml_name, message):
+    def _send_post(self, ml_name, message, mailfrom):
         self.ml_name_arg = ml_name
         self.message_arg = message
+        self.mailfrom_arg = mailfrom
 
     def test_create_ml_by_admin(self):
         msg = 'From: Test2 <test2@example.com>\n' \
@@ -786,7 +788,7 @@ class SendPostTest(unittest.TestCase):
 
         with mock.patch.object(DummySMTPClient, 'sendmail') as m:
             m.side_effect = self._sendmail
-            self.handler.send_post('ml-000010', msg_obj)
+            self.handler.send_post('ml-000010', msg_obj, "xyz")
             self.assertEqual(self.members, members)
             message = email.message_from_string(self.message)
             self.assertEqual(message['to'], 'ml-000010@testml.net')
@@ -811,7 +813,7 @@ class SendPostTest(unittest.TestCase):
 
         with mock.patch.object(DummySMTPClient, 'sendmail') as m:
             m.side_effect = self._sendmail
-            self.handler.send_post('ml-000010', msg_obj)
+            self.handler.send_post('ml-000010', msg_obj, "xyz")
             self.assertEqual(self.members, members)
             message = email.message_from_string(self.message)
             self.assertEqual(message['to'], 'ml-000010@testml.net')

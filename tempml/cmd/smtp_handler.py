@@ -130,7 +130,7 @@ class TempMlSMTPServer(smtpd.SMTPServer):
         if ml_name == self.new_ml_account:
             ml_name = self.ml_name_format % db.increase_counter()
             db.create_ml(ml_name, (to | cc | _from) - self.admins, mailfrom)
-            self.send_post(ml_name, message)
+            self.send_post(ml_name, message, mailfrom)
             return
 
         # Post a message to an existing ML
@@ -156,9 +156,9 @@ class TempMlSMTPServer(smtpd.SMTPServer):
             db.add_members(ml_name, (cc - self.admins), mailfrom)
 
         # Send a post to the members of the ML
-        self.send_post(ml_name, message)
+        self.send_post(ml_name, message, mailfrom)
 
-    def send_post(self, ml_name, message):
+    def send_post(self, ml_name, message, mailfrom):
         """
         Send a post to the ML members
 
@@ -166,6 +166,8 @@ class TempMlSMTPServer(smtpd.SMTPServer):
         :type ml_name: str
         :param message: MIME multipart object
         :type message: email.mime.multipart.MIMEMultipart
+        :param mailfrom: sender's email address
+        :type mailfrom: str
         :rtype: None
         """
         logging.debug("ml_name: %s", ml_name)
@@ -188,6 +190,7 @@ class TempMlSMTPServer(smtpd.SMTPServer):
         relay.set_debuglevel(1)
         relay.sendmail(_from, members, message.as_string())
         relay.quit()
+        db.log_post(ml_name, members, mailfrom)
 
 
 def main(**kwargs):
