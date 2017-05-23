@@ -1,0 +1,4 @@
+pymongo
+mock
+unittest
+email_normalize
