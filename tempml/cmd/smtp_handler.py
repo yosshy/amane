@@ -78,6 +78,7 @@ class TempMlSMTPServer(smtpd.SMTPServer):
         if admin_file:
             with open(admin_file) as f:
                 self.admins = normalize(f.readlines())
+        logging.info("admins: %s", self.admins)
 
         db.init_db(db_url, db_name)
 
@@ -96,16 +97,13 @@ class TempMlSMTPServer(smtpd.SMTPServer):
         from_str = message.get('from', "").strip()
         to_str = message.get('to', "").strip()
         cc_str = message.get('cc', "").strip()
-        logging.debug("From: %s", from_str)
-        logging.debug("To: %s", to_str)
-        logging.debug("Cc: %s", cc_str)
+        subject = message.get('subject', "").strip()
+        logging.info("Processing: from=%s|to=%s|cc=%s|subject=%s|",
+                     from_str, to_str, cc_str, subject)
 
         _from = normalize([from_str])
         to = normalize(to_str.split(','))
         cc = normalize(cc_str.split(','))
-        logging.warning("To: %s", to)
-        logging.warning("Cc: %s", cc)
-        logging.warning("From: %s", _from)
 
         # checking cross-post
         mls = [_ for _ in (to | cc) if _.endswith("@" + self.domain)]
@@ -170,7 +168,6 @@ class TempMlSMTPServer(smtpd.SMTPServer):
         :type mailfrom: str
         :rtype: None
         """
-        logging.debug("ml_name: %s", ml_name)
 
         # Format the post
         _from = ml_name + "@" + self.domain
@@ -190,10 +187,12 @@ class TempMlSMTPServer(smtpd.SMTPServer):
         relay.set_debuglevel(1)
         relay.sendmail(_from, members | self.admins, message.as_string())
         relay.quit()
+        logging.info("Sent: ml_name=%s|mailfrom=%s|members=%s|",
+                     ml_name, mailfrom, (members | self.admins))
         db.log_post(ml_name, members, mailfrom)
 
 
-def main(version=False, verbose=False, log_file=None, **kwargs):
+def main(version=False, **kwargs):
     """
     The main routine
     """
@@ -201,7 +200,8 @@ def main(version=False, verbose=False, log_file=None, **kwargs):
         print(pbr.version.VersionInfo('tempml'))
         return 0
 
-    log.setup(filename=log_file, verbose=verbose)
+    log.setup(filename=kwargs.pop('log_file'), verbose=kwargs.pop('verbose'))
+    logging.info("args: %s", kwargs)
 
     server = TempMlSMTPServer(**kwargs)
     asyncore.loop()
