@@ -75,7 +75,7 @@ def create_ml(ml_name, members):
     :param ml_name: ML ID
     :type ml_name: str
     :param members: e-mail addresses to register
-    :type members: list(str)
+    :type members: set(str)
     :return: ML object
     :rtype: dict
     """
@@ -87,7 +87,7 @@ def create_ml(ml_name, members):
 
     ml_dict = {
         "ml_name": ml_name,
-        "members": members,
+        "members": list(members),
         "created": datetime.now(),
         "updated": datetime.now(),
         "status": const.STATUS_OPEN,
@@ -151,16 +151,15 @@ def add_members(ml_name, members):
     :param ml_name: mailing list ID
     :type ml_name: str
     :param members: e-mail addresses to add
-    :type members: list(str)
+    :type members: set(str)
     :rtype: None
     """
     ml = DB.ml.find_one({'ml_name': ml_name})
     logging.debug("before: %s", ml)
-    _members = ml.get('members', [])
-    _members = list(set(_members + members))
-    _members.sort()
+    _members = set(ml.get('members', []))
+    _members |= members
     ml = DB.ml.find_one_and_update({'ml_name': ml_name},
-                                   {'$set': {'members': _members,
+                                   {'$set': {'members': list(_members),
                                              'updated': datetime.now()}})
     logging.debug("after: %s", ml)
 
@@ -173,17 +172,15 @@ def del_members(ml_name, members):
     :param ml_name: mailing list ID
     :type ml_name: str
     :param members: e-mail addresses to add
-    :type members: list(str)
+    :type members: set(str)
     :rtype: None
     """
     ml = DB.ml.find_one({'ml_name': ml_name})
     logging.debug("before: %s", ml)
-    _members = ml.get('members', [])
-    for member in members:
-        if member in _members:
-            _members.remove(member)
+    _members = set(ml.get('members', []))
+    _members -= members
     ml = DB.ml.find_one_and_update({'ml_name': ml_name},
-                                   {'$set': {'members': _members,
+                                   {'$set': {'members': list(_members),
                                              'updated': datetime.now()}})
     logging.debug("after: %s", ml)
 
@@ -196,9 +193,9 @@ def get_members(ml_name):
     :param ml_name: mailing list ID
     :type ml_name: str
     :return: members
-    :rtype: list(str)
+    :rtype: set(str)
     """
     ml = DB.ml.find_one({'ml_name': ml_name})
     if ml is None:
         return None
-    return ml.get('members', [])
+    return set(ml.get('members', []))
