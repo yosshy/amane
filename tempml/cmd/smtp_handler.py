@@ -34,7 +34,6 @@ import sys
 
 from tempml import const
 from tempml import db
-from tempml import utils
 
 
 NEW_ML_ACCOUNT = os.environ.get("TEMPML_NEW_ML_ACCOUNT", "new")
