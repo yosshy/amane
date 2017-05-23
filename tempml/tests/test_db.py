@@ -93,19 +93,19 @@ class DbTest(unittest.TestCase):
         self.assertEqual(ml2['status'], const.STATUS_OPEN)
         self.assertEqual(ml1['by'], "XYZ")
         logs = [
-        {
-            'op': const.OP_CREATE,
-            'by': "xyz",
-            'members': [],
-        },
-        {
-            'op': const.OP_ORPHAN,
-            'by': "XYZ",
-        },
-        {
-            'op': const.OP_CLOSE,
-            'by': "XYZ",
-        },
+            {
+                'op': const.OP_CREATE,
+                'by': "xyz",
+                'members': [],
+            },
+            {
+                'op': const.OP_ORPHAN,
+                'by': "XYZ",
+            },
+            {
+                'op': const.OP_CLOSE,
+                'by': "XYZ",
+            },
         ]
         self.assertEqual(ml1['logs'], logs)
 
@@ -126,30 +126,30 @@ class DbTest(unittest.TestCase):
         db.del_members(ml_name, {"abc", "def"}, "xyz")
         self.assertEqual(db.get_members(ml_name), set())
         logs = [
-        {
-            'op': const.OP_CREATE,
-            'by': "xyz",
-            'members': set(),
-        },
-        {
-            'op': const.OP_ADD_MEMBERS,
-            'by': "xyz",
-            'members': {"abc", "def"},
-        },
-        {
-            'op': const.OP_ADD_MEMBERS,
-            'by': "xyz",
-            'members': {"abc", "ghi"},
-        },
-        {
-            'op': const.OP_DEL_MEMBERS,
-            'by': "xyz",
-            'members': {"abc", "ghi"},
-        },
-        {
-            'op': const.OP_DEL_MEMBERS,
-            'by': "xyz",
-            'members': {"abc", "def"},
-        },
+            {
+                'op': const.OP_CREATE,
+                'by': "xyz",
+                'members': set(),
+            },
+            {
+                'op': const.OP_ADD_MEMBERS,
+                'by': "xyz",
+                'members': {"abc", "def"},
+            },
+            {
+                'op': const.OP_ADD_MEMBERS,
+                'by': "xyz",
+                'members': {"abc", "ghi"},
+            },
+            {
+                'op': const.OP_DEL_MEMBERS,
+                'by': "xyz",
+                'members': {"abc", "ghi"},
+            },
+            {
+                'op': const.OP_DEL_MEMBERS,
+                'by': "xyz",
+                'members': {"abc", "def"},
+            },
         ]
         self.assertEqual(db.get_logs(ml_name), logs)
