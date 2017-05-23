@@ -19,13 +19,14 @@ Database handler
 
 from datetime import datetime
 import logging
-import pymongo
 import time
 
-from . import const
+from tempml import const
 
 
 DB = None
+COUNTER = 0
+MLS = {}
 
 
 def init_db(db_url, db_name):
@@ -38,20 +39,11 @@ def init_db(db_url, db_name):
     :type db_name: str
     :rtype: None
     """
-    global DB
-    client = pymongo.MongoClient(db_url)
-    DB = client[db_name]
-
-    n = DB.counter.count()
-    if n == 0:
-        logging.debug("we have no counter collection")
-        counter = DB.counter.insert_one({'seq': 1})
-        logging.debug("created: %s", counter)
-    elif n == 1:
-        counter = DB.counter.find_one()
-        logging.debug("found: %s", counter)
-    else:
-        logging.error("we have %d counter collections", n)
+    logging.debug("fake_db: init_db")
+    global COUNTER
+    global MLS
+    COUNTER = 0
+    MLS = {}
 
 
 def increase_counter():
@@ -62,9 +54,10 @@ def increase_counter():
     :return: The next count to use
     :rtype: int
     """
-    counter = DB.counter.find_one_and_update({}, {'$inc': {'seq': 1}})
-    logging.debug("after: %s", counter)
-    return counter['seq']
+    global COUNTER
+    logging.debug("fake_db: increase_counter")
+    COUNTER += 1
+    return COUNTER
 
 
 def create_ml(ml_name, members):
@@ -79,20 +72,16 @@ def create_ml(ml_name, members):
     :return: ML object
     :rtype: dict
     """
-    ml = DB.ml.find_one({'ml_name': ml_name})
-    if ml:
-        logging.error("A ML already exists: %s", ml_name)
-        logging.error(ml)
-        return
-
+    logging.debug("fake_db: create_ml")
     ml_dict = {
         "ml_name": ml_name,
-        "members": list(members),
+        "members": members,
         "created": datetime.now(),
         "updated": datetime.now(),
         "status": const.STATUS_OPEN,
     }
-    DB.ml.insert_one(ml_dict)
+    MLS[ml_name] = ml_dict
+    logging.debug("after: %s", ml_dict)
 
 
 def get_ml(ml_name):
@@ -105,8 +94,8 @@ def get_ml(ml_name):
     :return: ML object
     :rtype: dict
     """
-    ml = DB.ml.find_one({'ml_name': ml_name})
-    return ml
+    logging.debug("fake_db: get_ml")
+    return MLS[ml_name]
 
 
 def mark_mls_orphaned(last_updated):
@@ -119,11 +108,12 @@ def mark_mls_orphaned(last_updated):
     :return: ML objects
     :rtype: list(dict)
     """
-    DB.ml.update_many({'status': const.STATUS_OPEN,
-                       'updated': {'$lt': last_updated}},
-                      {'$set': {'status': const.STATUS_ORPHANED,
-                                'updated': datetime.now()}})
-    return DB.ml.find({'status': const.STATUS_ORPHANED})
+    logging.debug("fake_db: make_mls_orphaned")
+    for ml_name, data in MLS.items():
+        if data['status'] == const.STATUS_OPEN and \
+                data['updated'] < last_updated:
+            data['status'] = const.STATUS_ORPHANED
+            data['updated'] = datetime.now()
 
 
 def mark_mls_closed(last_updated):
@@ -136,11 +126,12 @@ def mark_mls_closed(last_updated):
     :return: ML objects
     :rtype: list(dict)
     """
-    DB.ml.update_many({'status': const.STATUS_ORPHANED,
-                       'updated': {'$lt': last_updated}},
-                      {'$set': {'status': const.STATUS_CLOSED,
-                                'updated': datetime.now()}})
-    return DB.ml.find({'status': const.STATUS_CLOSED})
+    logging.debug("fake_db: make_mls_closed")
+    for ml_name, data in MLS.items():
+        if data['status'] == const.STATUS_ORPHANED and \
+                data['updated'] < last_updated:
+            data['status'] = const.STATUS_CLOSED
+            data['updated'] = datetime.now()
 
 
 def add_members(ml_name, members):
@@ -154,13 +145,10 @@ def add_members(ml_name, members):
     :type members: set(str)
     :rtype: None
     """
-    ml = DB.ml.find_one({'ml_name': ml_name})
+    logging.debug("fake_db: add_members")
+    ml = MLS[ml_name]
     logging.debug("before: %s", ml)
-    _members = set(ml.get('members', []))
-    _members |= members
-    ml = DB.ml.find_one_and_update({'ml_name': ml_name},
-                                   {'$set': {'members': list(_members),
-                                             'updated': datetime.now()}})
+    ml['members'] |= members
     logging.debug("after: %s", ml)
 
 
@@ -175,14 +163,11 @@ def del_members(ml_name, members):
     :type members: set(str)
     :rtype: None
     """
-    ml = DB.ml.find_one({'ml_name': ml_name})
-    logging.debug("before: %s", ml)
-    _members = set(ml.get('members', []))
-    _members -= members
-    ml = DB.ml.find_one_and_update({'ml_name': ml_name},
-                                   {'$set': {'members': list(_members),
-                                             'updated': datetime.now()}})
-    logging.debug("after: %s", ml)
+    logging.warning("fake_db: del_members: %s", members)
+    ml = MLS[ml_name]
+    logging.warning("before: %s", ml)
+    ml['members'] -= members
+    logging.warning("after: %s", ml)
 
 
 def get_members(ml_name):
@@ -195,7 +180,7 @@ def get_members(ml_name):
     :return: members
     :rtype: set(str)
     """
-    ml = DB.ml.find_one({'ml_name': ml_name})
-    if ml is None:
+    logging.debug("fake_db: get_members")
+    if ml_name not in MLS:
         return None
-    return set(ml.get('members', []))
+    return MLS[ml_name]['members']

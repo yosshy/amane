@@ -51,7 +51,7 @@ class DbTest(unittest.TestCase):
     def test_create_ml(self):
         members = ["abc", "def", "ghi"]
 
-        for i in range(1,4):
+        for i in range(1, 4):
             ml_name = ML_NAME % db.increase_counter()
             db.create_ml(ml_name, members)
             ml = db.get_ml(ml_name)
@@ -85,22 +85,17 @@ class DbTest(unittest.TestCase):
 
     def test_add_and_del_members(self):
         ml_name = ML_NAME % db.increase_counter()
-        db.create_ml(ml_name, [])
-        ml = db.get_ml(ml_name)
-        self.assertEqual(ml['members'], [])
+        db.create_ml(ml_name, {})
+        self.assertEqual(db.get_members(ml_name), set())
 
-        db.add_members(ml_name, ["abc", "def"])
-        ml = db.get_ml(ml_name)
-        self.assertEqual(ml['members'], ["abc", "def"])
+        db.add_members(ml_name, {"abc", "def"})
+        self.assertEqual(db.get_members(ml_name), {"abc", "def"})
 
-        db.add_members(ml_name, ["abc", "ghi"])
-        ml = db.get_ml(ml_name)
-        self.assertEqual(ml['members'], ["abc", "def", "ghi"])
+        db.add_members(ml_name, {"abc", "ghi"})
+        self.assertEqual(db.get_members(ml_name), {"abc", "def", "ghi"})
 
-        db.del_members(ml_name, ["abc", "ghi"])
-        ml = db.get_ml(ml_name)
-        self.assertEqual(ml['members'], ["def"])
+        db.del_members(ml_name, {"abc", "ghi"})
+        self.assertEqual(db.get_members(ml_name), {"def"})
 
-        db.del_members(ml_name, ["abc", "def"])
-        ml = db.get_ml(ml_name)
-        self.assertEqual(ml['members'], [])
+        db.del_members(ml_name, {"abc", "def"})
+        self.assertEqual(db.get_members(ml_name), set())
