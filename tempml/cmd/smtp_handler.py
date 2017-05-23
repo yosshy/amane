@@ -45,7 +45,7 @@ RELAY_HOST = os.environ.get("TEMPML_RELAY_HOST", "localhost")
 RELAY_PORT = os.environ.get("TEMPML_RELAY_PORT", 1025)
 DOMAIN = os.environ.get("TEMPML_DOMAIN", "localdomain")
 ML_NAME_FORMAT = os.environ.get("TEMPML_ML_NAME_FORMAT", "[ml-%06d]")
-STATIC_ADDRESS_LIST = os.environ.get("TEMPML_STATIC_ADDRESS_LIST")
+ADMIN_FILE = os.environ.get("TEMPML_ADMIN_FILE")
 
 
 def normalize(addresses):
@@ -237,9 +237,9 @@ if __name__ == '__main__':
     parser.add_argument('--ml-name-format',
                         help='ML name format string',
                         default=ML_NAME_FORMAT)
-    parser.add_argument('--static-address-list',
+    parser.add_argument('--admin-file',
                         help='filename within email address list',
-                        default=STATIC_ADDRESS_LIST)
+                        default=ADMIN_FILE)
 
     opts = parser.parse_args()
     sys.exit(main(**opts.__dict__))
