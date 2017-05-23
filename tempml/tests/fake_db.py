@@ -60,7 +60,7 @@ def increase_counter():
     return COUNTER
 
 
-def create_ml(ml_name, members):
+def create_ml(ml_name, members, by):
     """
     Create a new ML and register members into it
     This is an atomic operation.
@@ -69,6 +69,8 @@ def create_ml(ml_name, members):
     :type ml_name: str
     :param members: e-mail addresses to register
     :type members: set(str)
+    :param by: sender's e-mail address
+    :type by: str
     :return: ML object
     :rtype: dict
     """
@@ -79,6 +81,7 @@ def create_ml(ml_name, members):
         "created": datetime.now(),
         "updated": datetime.now(),
         "status": const.STATUS_OPEN,
+        "by": by,
     }
     MLS[ml_name] = ml_dict
     logging.debug("after: %s", ml_dict)
@@ -98,13 +101,15 @@ def get_ml(ml_name):
     return MLS[ml_name]
 
 
-def mark_mls_orphaned(last_updated):
+def mark_mls_orphaned(last_updated, by):
     """
     Mark old MLs orphaned if they are updated before last_updated
     This ISN'T an atomic operation.
 
     :param last_updated: Last updated
     :type last_updated: datetime
+    :param by: sender's e-mail address
+    :type by: str
     :return: ML objects
     :rtype: list(dict)
     """
@@ -114,15 +119,18 @@ def mark_mls_orphaned(last_updated):
                 data['updated'] < last_updated:
             data['status'] = const.STATUS_ORPHANED
             data['updated'] = datetime.now()
+            data['by'] = by
 
 
-def mark_mls_closed(last_updated):
+def mark_mls_closed(last_updated, by):
     """
     Mark old MLs closed if they are updated before last_updated
     This ISN'T an atomic operation.
 
     :param last_updated: Last updated
     :type last_updated: datetime
+    :param by: sender's e-mail address
+    :type by: str
     :return: ML objects
     :rtype: list(dict)
     """
@@ -132,9 +140,10 @@ def mark_mls_closed(last_updated):
                 data['updated'] < last_updated:
             data['status'] = const.STATUS_CLOSED
             data['updated'] = datetime.now()
+            data['by'] = by
 
 
-def add_members(ml_name, members):
+def add_members(ml_name, members, by):
     """
     Add e-mail addresses of new members into a ML
     This ISN'T an atomic operation.
@@ -143,16 +152,20 @@ def add_members(ml_name, members):
     :type ml_name: str
     :param members: e-mail addresses to add
     :type members: set(str)
+    :param by: sender's e-mail address
+    :type by: str
     :rtype: None
     """
     logging.debug("fake_db: add_members")
     ml = MLS[ml_name]
     logging.debug("before: %s", ml)
     ml['members'] |= members
+    ml['updated'] = datetime.now()
+    ml['by'] = by
     logging.debug("after: %s", ml)
 
 
-def del_members(ml_name, members):
+def del_members(ml_name, members, by):
     """
     Remove e-mail addresses of members from a ML
     This ISN'T an atomic operation.
@@ -161,12 +174,16 @@ def del_members(ml_name, members):
     :type ml_name: str
     :param members: e-mail addresses to add
     :type members: set(str)
+    :param by: sender's e-mail address
+    :type by: str
     :rtype: None
     """
     logging.warning("fake_db: del_members: %s", members)
     ml = MLS[ml_name]
     logging.warning("before: %s", ml)
     ml['members'] -= members
+    ml['updated'] = datetime.now()
+    ml['by'] = by
     logging.warning("after: %s", ml)
 
 

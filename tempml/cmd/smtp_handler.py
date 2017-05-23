@@ -129,7 +129,7 @@ class TempMlSMTPServer(smtpd.SMTPServer):
         # Want a new ML?
         if ml_name == self.new_ml_account:
             ml_name = self.ml_name_format % db.increase_counter()
-            db.create_ml(ml_name, (to | cc | _from) - self.admins)
+            db.create_ml(ml_name, (to | cc | _from) - self.admins, mailfrom)
             self.send_post(ml_name, message)
             return
 
@@ -148,12 +148,12 @@ class TempMlSMTPServer(smtpd.SMTPServer):
         # Remove cc'd members from the ML members if the subject is empty
         if message.get('subject', "") == "":
             if len(cc - self.admins) > 0:
-                db.del_members(ml_name, (cc - self.admins))
+                db.del_members(ml_name, (cc - self.admins), mailfrom)
             return
 
         # Checking To: and Cc:
         if len(cc - self.admins) > 0:
-            db.add_members(ml_name, (cc - self.admins))
+            db.add_members(ml_name, (cc - self.admins), mailfrom)
 
         # Send a post to the members of the ML
         self.send_post(ml_name, message)

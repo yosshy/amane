@@ -50,52 +50,56 @@ class DbTest(unittest.TestCase):
 
     def test_create_ml(self):
         members = ["abc", "def", "ghi"]
+        by = "xyz"
 
         for i in range(1, 4):
             ml_name = ML_NAME % db.increase_counter()
-            db.create_ml(ml_name, members)
+            db.create_ml(ml_name, members, by)
             ml = db.get_ml(ml_name)
             self.assertEqual(ml['ml_name'], ml_name)
             self.assertEqual(ml['members'], members)
+            self.assertEqual(ml['by'], by)
             self.assertEqual(ml['status'], const.STATUS_OPEN)
 
     def test_mark_mls_orphaned_and_closed(self):
         ml1_name = ML_NAME % db.increase_counter()
-        db.create_ml(ml1_name, [])
+        db.create_ml(ml1_name, [], "xyz")
 
         time.sleep(1)
         now = datetime.now()
 
         time.sleep(1)
         ml2_name = ML_NAME % db.increase_counter()
-        db.create_ml(ml2_name, [])
+        db.create_ml(ml2_name, [], "xyz")
 
-        db.mark_mls_orphaned(now)
+        db.mark_mls_orphaned(now, "XYZ")
         ml1 = db.get_ml(ml1_name)
         ml2 = db.get_ml(ml2_name)
         self.assertEqual(ml1['status'], const.STATUS_ORPHANED)
+        self.assertEqual(ml1['by'], "XYZ")
         self.assertEqual(ml2['status'], const.STATUS_OPEN)
 
         time.sleep(1)
-        db.mark_mls_closed(datetime.now())
+        db.mark_mls_closed(datetime.now(), "XYZ")
         ml1 = db.get_ml(ml1_name)
         ml2 = db.get_ml(ml2_name)
         self.assertEqual(ml1['status'], const.STATUS_CLOSED)
         self.assertEqual(ml2['status'], const.STATUS_OPEN)
+        self.assertEqual(ml1['by'], "XYZ")
 
     def test_add_and_del_members(self):
         ml_name = ML_NAME % db.increase_counter()
-        db.create_ml(ml_name, {})
+        db.create_ml(ml_name, {}, "xyz")
         self.assertEqual(db.get_members(ml_name), set())
 
-        db.add_members(ml_name, {"abc", "def"})
+        db.add_members(ml_name, {"abc", "def"}, "xyz")
         self.assertEqual(db.get_members(ml_name), {"abc", "def"})
 
-        db.add_members(ml_name, {"abc", "ghi"})
+        db.add_members(ml_name, {"abc", "ghi"}, "xyz")
         self.assertEqual(db.get_members(ml_name), {"abc", "def", "ghi"})
 
-        db.del_members(ml_name, {"abc", "ghi"})
+        db.del_members(ml_name, {"abc", "ghi"}, "xyz")
         self.assertEqual(db.get_members(ml_name), {"def"})
 
-        db.del_members(ml_name, {"abc", "def"})
+        db.del_members(ml_name, {"abc", "def"}, "xyz")
         self.assertEqual(db.get_members(ml_name), set())

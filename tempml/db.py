@@ -67,7 +67,7 @@ def increase_counter():
     return counter['seq']
 
 
-def create_ml(ml_name, members):
+def create_ml(ml_name, members, by):
     """
     Create a new ML and register members into it
     This is an atomic operation.
@@ -76,6 +76,8 @@ def create_ml(ml_name, members):
     :type ml_name: str
     :param members: e-mail addresses to register
     :type members: set(str)
+    :param by: sender's e-mail address
+    :type by: str
     :return: ML object
     :rtype: dict
     """
@@ -91,6 +93,7 @@ def create_ml(ml_name, members):
         "created": datetime.now(),
         "updated": datetime.now(),
         "status": const.STATUS_OPEN,
+        "by": by,
     }
     DB.ml.insert_one(ml_dict)
 
@@ -109,41 +112,47 @@ def get_ml(ml_name):
     return ml
 
 
-def mark_mls_orphaned(last_updated):
+def mark_mls_orphaned(last_updated, by):
     """
     Mark old MLs orphaned if they are updated before last_updated
     This ISN'T an atomic operation.
 
     :param last_updated: Last updated
     :type last_updated: datetime
+    :param by: sender's e-mail address
+    :type by: str
     :return: ML objects
     :rtype: list(dict)
     """
     DB.ml.update_many({'status': const.STATUS_OPEN,
                        'updated': {'$lt': last_updated}},
                       {'$set': {'status': const.STATUS_ORPHANED,
-                                'updated': datetime.now()}})
+                                'updated': datetime.now(),
+                                'by': by}})
     return DB.ml.find({'status': const.STATUS_ORPHANED})
 
 
-def mark_mls_closed(last_updated):
+def mark_mls_closed(last_updated, by):
     """
     Mark old MLs closed if they are updated before last_updated
     This ISN'T an atomic operation.
 
     :param last_updated: Last updated
     :type last_updated: datetime
+    :param by: sender's e-mail address
+    :type by: str
     :return: ML objects
     :rtype: list(dict)
     """
     DB.ml.update_many({'status': const.STATUS_ORPHANED,
                        'updated': {'$lt': last_updated}},
                       {'$set': {'status': const.STATUS_CLOSED,
-                                'updated': datetime.now()}})
+                                'updated': datetime.now(),
+                                'by': by}})
     return DB.ml.find({'status': const.STATUS_CLOSED})
 
 
-def add_members(ml_name, members):
+def add_members(ml_name, members, by):
     """
     Add e-mail addresses of new members into a ML
     This ISN'T an atomic operation.
@@ -152,6 +161,8 @@ def add_members(ml_name, members):
     :type ml_name: str
     :param members: e-mail addresses to add
     :type members: set(str)
+    :param by: sender's e-mail address
+    :type by: str
     :rtype: None
     """
     ml = DB.ml.find_one({'ml_name': ml_name})
@@ -160,11 +171,12 @@ def add_members(ml_name, members):
     _members |= members
     ml = DB.ml.find_one_and_update({'ml_name': ml_name},
                                    {'$set': {'members': list(_members),
-                                             'updated': datetime.now()}})
+                                             'updated': datetime.now(),
+                                             'by': by}})
     logging.debug("after: %s", ml)
 
 
-def del_members(ml_name, members):
+def del_members(ml_name, members, by):
     """
     Remove e-mail addresses of members from a ML
     This ISN'T an atomic operation.
@@ -173,6 +185,8 @@ def del_members(ml_name, members):
     :type ml_name: str
     :param members: e-mail addresses to add
     :type members: set(str)
+    :param by: sender's e-mail address
+    :type by: str
     :rtype: None
     """
     ml = DB.ml.find_one({'ml_name': ml_name})
@@ -181,7 +195,8 @@ def del_members(ml_name, members):
     _members -= members
     ml = DB.ml.find_one_and_update({'ml_name': ml_name},
                                    {'$set': {'members': list(_members),
-                                             'updated': datetime.now()}})
+                                             'updated': datetime.now(),
+                                             'by': by}})
     logging.debug("after: %s", ml)
 
 
