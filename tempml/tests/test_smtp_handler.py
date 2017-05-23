@@ -24,7 +24,10 @@ import random
 import time
 import smtpd
 import unittest
-from unittest import mock
+try:
+    from unittest import mock
+except:
+    import mock
 
 import tempml
 from tempml import const
