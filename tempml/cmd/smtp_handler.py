@@ -185,10 +185,10 @@ class TempMlSMTPServer(smtpd.SMTPServer):
                                ml_name, message['subject']))
 
         # Send a post to the relay host
-        members = db.get_members(ml_name) | self.admins
+        members = db.get_members(ml_name)
         relay = smtplib.SMTP(self.relay_host, self.relay_port)
         relay.set_debuglevel(1)
-        relay.sendmail(_from, members, message.as_string())
+        relay.sendmail(_from, members | self.admins, message.as_string())
         relay.quit()
         db.log_post(ml_name, members, mailfrom)
 
