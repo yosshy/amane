@@ -27,14 +27,14 @@ MAX_BYTES = 100 * 1024 * 1024
 MAX_FILES = 10
 
 
-def setup(filename=None, verbose=False):
+def setup(filename=None, debug=False):
     """
     Set up logger object
 
     :keyword filename: name of a log file
     :type filename: str
-    :keyword verbose: verbose output
-    :type level: bool
+    :keyword debug: debug output
+    :type debug: bool
     :rtype: None
     """
 
@@ -44,7 +44,7 @@ def setup(filename=None, verbose=False):
     else:
         handler = logging.StreamHandler()
 
-    if verbose:
+    if debug:
         format = DEBUG_FORMAT
         level = logging.DEBUG
     else:

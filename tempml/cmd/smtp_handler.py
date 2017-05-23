@@ -64,15 +64,17 @@ def normalize(addresses):
 
 class TempMlSMTPServer(smtpd.SMTPServer):
 
-    def __init__(self, listen_address, listen_port, relay_host, relay_port,
-                 db_url, db_name, ml_name_format, new_ml_account, domain,
-                 admin_file):
+    def __init__(self, listen_address=None, listen_port=None, relay_host=None,
+                 relay_port=None, db_url=None, db_name=None,
+                 ml_name_format=None, new_ml_account=None, domain=None,
+                 admin_file=None, debug=False):
 
         self.relay_host = relay_host
         self.relay_port = relay_port
         self.ml_name_format = ml_name_format
         self.new_ml_account = new_ml_account
         self.domain = domain
+        self.debug = debug
         self.new_ml_address = new_ml_account + "@" + domain
         self.admins = set()
         if admin_file:
@@ -184,7 +186,8 @@ class TempMlSMTPServer(smtpd.SMTPServer):
         # Send a post to the relay host
         members = db.get_members(ml_name)
         relay = smtplib.SMTP(self.relay_host, self.relay_port)
-        relay.set_debuglevel(1)
+        if self.debug:
+            relay.set_debuglevel(1)
         relay.sendmail(_from, members | self.admins, message.as_string())
         relay.quit()
         logging.info("Sent: ml_name=%s|mailfrom=%s|members=%s|",
@@ -200,7 +203,7 @@ def main(version=False, **kwargs):
         print(pbr.version.VersionInfo('tempml'))
         return 0
 
-    log.setup(filename=kwargs.pop('log_file'), verbose=kwargs.pop('verbose'))
+    log.setup(filename=kwargs.pop('log_file'), debug=kwargs['debug'])
     logging.info("args: %s", kwargs)
 
     server = TempMlSMTPServer(**kwargs)
@@ -212,8 +215,8 @@ if __name__ == '__main__':
     parser.add_argument('--version',
                         help='Print version and exit',
                         action='store_true')
-    parser.add_argument('--verbose',
-                        help='Verbose output',
+    parser.add_argument('--debug',
+                        help='Debug output',
                         action='store_true')
     parser.add_argument('--new-ml-account',
                         help='Account to create new ml',
