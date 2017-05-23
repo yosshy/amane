@@ -1,0 +1,29 @@
+CHANGES
+=======
+
+* setup: added
+* README: updated
+* test\_smtp\_handler: python2 support
+* smtp\_handler: fix a bug for ml\_name\_format
+* smtp\_handler: rename 'verbose' argument as 'debug'
+* db: improved logging
+* smtp\_handler: improved logging
+* log: added logging configuration
+* test\_db: PEP8
+* smtp\_handler: reduced logged members
+* db: added operation logging for MLs
+* db: added 'by' argument
+* smtp\_handler: renamed static\_address\_list as admin\_file
+* smtp\_handler: removed importing utils
+* smtp\_handler: added
+* db: changed members data from list() to set()
+* test\_db: PEP8
+* db: return None if no ml found in get\_members
+* const: added SMTP status
+* db: replace ml\_id with ml\_name
+* Added db.py as a DB API
+* Added skelton.py for file header
+* Added const.py for Constants
+* Added \_\_init\_\_.py
+* Update README.md
+* Initial commit
