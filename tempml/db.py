@@ -46,10 +46,10 @@ def init_db(db_url, db_name):
     if n == 0:
         logging.debug("we have no counter collection")
         counter = DB.counter.insert_one({'seq': 1})
-        logging.debug("created: %s", counter)
+        logging.debug("counter collection created")
     elif n == 1:
         counter = DB.counter.find_one()
-        logging.debug("found: %s", counter)
+        logging.debug("counter collection found: %s", counter)
     else:
         logging.error("we have %d counter collections", n)
 
@@ -63,7 +63,7 @@ def increase_counter():
     :rtype: int
     """
     counter = DB.counter.find_one_and_update({}, {'$inc': {'seq': 1}})
-    logging.debug("after: %s", counter)
+    logging.debug("increased. before: %s", counter)
     return counter['seq']
 
 
@@ -83,8 +83,7 @@ def create_ml(ml_name, members, by):
     """
     ml = DB.ml.find_one({'ml_name': ml_name})
     if ml:
-        logging.error("A ML already exists: %s", ml_name)
-        logging.error(ml)
+        logging.error("ML %s already exists: %s", ml_name, ml)
         return
 
     log_dict = {
@@ -102,6 +101,7 @@ def create_ml(ml_name, members, by):
         "logs": [log_dict]
     }
     DB.ml.insert_one(ml_dict)
+    logging.debug("created: %s", ml_dict)
 
 
 def get_ml(ml_name):
@@ -140,7 +140,9 @@ def mark_mls_orphaned(last_updated, by):
                                 'updated': datetime.now(),
                                 'by': by},
                        '$push': {'logs': log_dict}})
-    return DB.ml.find({'status': const.STATUS_ORPHANED})
+    result = DB.ml.find({'status': const.STATUS_ORPHANED})
+    logging.debug("orphaned: %s", [_['ml_name'] for _ in result])
+    return result
 
 
 def mark_mls_closed(last_updated, by):
@@ -165,7 +167,9 @@ def mark_mls_closed(last_updated, by):
                                 'updated': datetime.now(),
                                 'by': by},
                        '$push': {'logs': log_dict}})
-    return DB.ml.find({'status': const.STATUS_CLOSED})
+    result = DB.ml.find({'status': const.STATUS_CLOSED})
+    logging.debug("closed: %s", [_['ml_name'] for _ in result])
+    return result
 
 
 def add_members(ml_name, members, by):
@@ -190,12 +194,14 @@ def add_members(ml_name, members, by):
         "by": by,
         "members": list(members),
     }
-    ml = DB.ml.find_one_and_update({'ml_name': ml_name},
-                                   {'$set': {'members': list(_members),
-                                             'updated': datetime.now(),
-                                             'by': by},
-                                    '$push': {'logs': log_dict}})
-    logging.debug("after: %s", ml)
+    DB.ml.find_one_and_update({'ml_name': ml_name},
+                              {'$set': {'members': list(_members),
+                                        'updated': datetime.now(),
+                                        'by': by},
+                               '$push': {'logs': log_dict}})
+    if logging.root.level == logging.DEBUG:
+        ml = DB.ml.find_one({'ml_name': ml_name})
+        logging.debug("after: %s", ml)
 
 
 def del_members(ml_name, members, by):
@@ -220,12 +226,14 @@ def del_members(ml_name, members, by):
         "by": by,
         "members": list(members),
     }
-    ml = DB.ml.find_one_and_update({'ml_name': ml_name},
-                                   {'$set': {'members': list(_members),
-                                             'updated': datetime.now(),
-                                             'by': by},
-                                    '$push': {'logs': log_dict}})
-    logging.debug("after: %s", ml)
+    DB.ml.find_one_and_update({'ml_name': ml_name},
+                              {'$set': {'members': list(_members),
+                                        'updated': datetime.now(),
+                                        'by': by},
+                               '$push': {'logs': log_dict}})
+    if logging.root.level == logging.DEBUG:
+        ml = DB.ml.find_one({'ml_name': ml_name})
+        logging.debug("after: %s", ml)
 
 
 def get_members(ml_name):
@@ -257,15 +265,21 @@ def log_post(ml_name, members, by):
     :type by: str
     :rtype: None
     """
+    if logging.root.level == logging.DEBUG:
+        ml = DB.ml.find_one({'ml_name': ml_name})
+        logging.debug("before: %s", ml)
     log_dict = {
         "op": const.OP_POST,
         "by": by,
     }
-    ml = DB.ml.find_one_and_update({'ml_name': ml_name},
-                                   {'$set': {'members': list(_members),
-                                             'updated': datetime.now(),
-                                             'by': by},
-                                    '$push': {'logs': log_dict}})
+    DB.ml.find_one_and_update({'ml_name': ml_name},
+                              {'$set': {'members': list(_members),
+                                        'updated': datetime.now(),
+                                        'by': by},
+                               '$push': {'logs': log_dict}})
+    if logging.root.level == logging.DEBUG:
+        ml = DB.ml.find_one({'ml_name': ml_name})
+        logging.debug("after: %s", ml)
 
 
 def get_logs(ml_name):
