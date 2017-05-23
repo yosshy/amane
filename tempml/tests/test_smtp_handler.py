@@ -75,7 +75,6 @@ class ProcessMessageTest(unittest.TestCase):
             ml_name_format="ml-%06d",
             new_ml_account="new",
             domain="testml.net",
-            verbose=False,
             admin_file=None)
 
     def tearDown(self):
@@ -428,7 +427,6 @@ class ProcessMessageWithAdminsTest(unittest.TestCase):
             ml_name_format="ml-%06d",
             new_ml_account="new",
             domain="testml.net",
-            verbose=False,
             admin_file=DUMMY_ADMIN_FILE)
 
     def tearDown(self):
@@ -764,7 +762,6 @@ class SendPostTest(unittest.TestCase):
             ml_name_format="ml-%06d",
             new_ml_account="new",
             domain="testml.net",
-            verbose=False,
             admin_file=None)
 
     def tearDown(self):

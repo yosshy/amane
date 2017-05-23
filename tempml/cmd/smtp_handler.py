@@ -34,6 +34,7 @@ import sys
 
 from tempml import const
 from tempml import db
+from tempml import log
 
 
 NEW_ML_ACCOUNT = os.environ.get("TEMPML_NEW_ML_ACCOUNT", "new")
@@ -65,14 +66,13 @@ class TempMlSMTPServer(smtpd.SMTPServer):
 
     def __init__(self, listen_address, listen_port, relay_host, relay_port,
                  db_url, db_name, ml_name_format, new_ml_account, domain,
-                 admin_file, verbose):
+                 admin_file):
 
         self.relay_host = relay_host
         self.relay_port = relay_port
         self.ml_name_format = ml_name_format
         self.new_ml_account = new_ml_account
         self.domain = domain
-        self.verbose = verbose
         self.new_ml_address = new_ml_account + "@" + domain
         self.admins = set()
         if admin_file:
@@ -193,13 +193,15 @@ class TempMlSMTPServer(smtpd.SMTPServer):
         db.log_post(ml_name, members, mailfrom)
 
 
-def main(**kwargs):
+def main(version=False, verbose=False, log_file=None, **kwargs):
     """
     The main routine
     """
     if version:
         print(pbr.version.VersionInfo('tempml'))
         return 0
+
+    log.setup(filename=log_file, verbose=verbose)
 
     server = TempMlSMTPServer(**kwargs)
     asyncore.loop()
@@ -243,6 +245,9 @@ if __name__ == '__main__':
     parser.add_argument('--admin-file',
                         help='filename within email address list',
                         default=ADMIN_FILE)
+    parser.add_argument('--log-file',
+                        help='log file name',
+                        default=None)
 
     opts = parser.parse_args()
     sys.exit(main(**opts.__dict__))
