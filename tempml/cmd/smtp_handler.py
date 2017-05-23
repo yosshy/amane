@@ -45,7 +45,7 @@ LISTEN_PORT = os.environ.get("TEMPML_LISTEN_PORT", 25)
 RELAY_HOST = os.environ.get("TEMPML_RELAY_HOST", "localhost")
 RELAY_PORT = os.environ.get("TEMPML_RELAY_PORT", 1025)
 DOMAIN = os.environ.get("TEMPML_DOMAIN", "localdomain")
-ML_NAME_FORMAT = os.environ.get("TEMPML_ML_NAME_FORMAT", "[ml-%06d]")
+ML_NAME_FORMAT = os.environ.get("TEMPML_ML_NAME_FORMAT", "ml-%06d")
 ADMIN_FILE = os.environ.get("TEMPML_ADMIN_FILE")
 
 
