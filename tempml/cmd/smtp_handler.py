@@ -49,6 +49,9 @@ ML_NAME_FORMAT = os.environ.get("TEMPML_ML_NAME_FORMAT", "ml-%06d")
 ADMIN_FILE = os.environ.get("TEMPML_ADMIN_FILE")
 LOG_FILE = os.environ.get("TEMPML_LOG_FILE")
 
+ERROR_SUFFIX = '-error'
+REMOVE_RFC822 = re.compile("rfc822;", re.I)
+
 
 def normalize(addresses):
     logging.debug(addresses)
@@ -133,6 +136,17 @@ class TempMlSMTPServer(smtpd.SMTPServer):
         if ml_address in cc:
             cc.remove(ml_address)
 
+        # Is an error mail?
+        if ml_name.endswith(ERROR_SUFFIX):
+            ml_name = ml_name.replace(ERROR_SUFFIX, "")
+            error_str = REMOVE_RFC822.sub(
+                "", message.get('original-recipient', ""))
+            error = normalize(error_str.split(','))
+            if len(error) > 0 and len(ml_name) > 0:
+                db.del_members(ml_name, error, 'error')
+                logging.error("returned; removed %s from %s", error, ml_name)
+            return
+
         # Want a new ML?
         if ml_name == self.new_ml_account:
             ml_name = self.ml_name_format % db.increase_counter()
@@ -181,16 +195,17 @@ class TempMlSMTPServer(smtpd.SMTPServer):
         """
 
         # Format the post
-        _from = ml_name + "@" + self.domain
-        message.replace_header('to',  _from)
-        if 'reply-to' in message:
-            message.replace_header('reply-to', _from)
-        else:
-            message['reply-to'] = _from
-        subject = message['subject']
+        _to = ml_name + "@" + self.domain
+        _from = ml_name + ERROR_SUFFIX + "@" + self.domain
+        del(message['To'])
+        del(message['Reply-To'])
+        del(message['Return-Path'])
+        message.add_header('To',  _to)
+        message.add_header('Reply-To', _to)
+        message.add_header('Return-Path', _from)
+        subject = message.get('Subject', '')
         subject = re.sub(r"^(RE:|Re:|re:)\s*\[%s\]\s*" % ml_name, "", subject)
-        message.replace_header('Subject', "[%s] %s" % (
-                               ml_name, message['subject']))
+        message.replace_header('Subject', "[%s] %s" % (ml_name, subject))
 
         # Send a post to the relay host
         members = db.get_members(ml_name)

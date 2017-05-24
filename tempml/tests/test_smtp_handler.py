@@ -408,6 +408,29 @@ class ProcessMessageTest(unittest.TestCase):
             self.assertEqual(m.call_count, 0)
             self.assertEqual(fake_db.get_members('ml-000010'), final_members)
 
+    def test_error_return(self):
+        initial_members = {"test1@example.com", "test2@example.com",
+                           "test3@example.com", "test4@example.com"}
+        fake_db.create_ml('ml-000010', initial_members, "test1@example.com")
+        msg = 'From: MAILER-DAEMON <daemon@example.com>\n' \
+              'To: ml-000010-error <ml-000010-error@testml.net>\n' \
+              'Original-Recipient: rfc822;test2@example.com\n' \
+              'Subject: Error\n' \
+              '\n' \
+              'Test mail\n'
+        final_members = {"test1@example.com", "test3@example.com",
+                         "test4@example.com"}
+
+        with mock.patch.object(self.handler, 'send_post') as m:
+            m.side_effect = self._send_post
+            self.handler.process_message(
+                ("127.0.0.2", 1000),
+                "test1@example.com",
+                ["ml-000010@tempml.net"],
+                msg)
+            self.assertEqual(m.call_count, 0)
+            self.assertEqual(fake_db.get_members('ml-000010'), final_members)
+
 
 class ProcessMessageWithAdminsTest(unittest.TestCase):
     """process_message() tests"""
