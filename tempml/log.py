@@ -37,13 +37,6 @@ def setup(filename=None, debug=False):
     :type debug: bool
     :rtype: None
     """
-
-    if filename:
-        handler = handlers.RotatingFileHandler(filename, maxBytes=MAX_BYTES,
-                                               backupCount=MAX_FILES)
-    else:
-        handler = logging.StreamHandler()
-
     if debug:
         format = DEBUG_FORMAT
         level = logging.DEBUG
@@ -51,4 +44,4 @@ def setup(filename=None, debug=False):
         format = FORMAT
         level = logging.INFO
 
-    logging.basicConfig(format=format, handlers=[handler], level=level)
+    logging.basicConfig(filename=filename, format=format, level=level)
