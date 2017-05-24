@@ -1,6 +1,14 @@
 CHANGES
 =======
 
+* smtp\_handler: many improvements and fixes
+* db: fixed a bug in log\_post()
+* log: removed handlers option for Python 2.7
+
+0.1
+---
+
+* Added AUTHORS and ChangeLog
 * setup: added
 * README: updated
 * test\_smtp\_handler: python2 support
@@ -25,5 +33,6 @@ CHANGES
 * Added skelton.py for file header
 * Added const.py for Constants
 * Added \_\_init\_\_.py
+* temporary save
 * Update README.md
 * Initial commit
