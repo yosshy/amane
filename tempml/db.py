@@ -273,7 +273,7 @@ def log_post(ml_name, members, by):
         "by": by,
     }
     DB.ml.find_one_and_update({'ml_name': ml_name},
-                              {'$set': {'members': list(_members),
+                              {'$set': {'members': list(members),
                                         'updated': datetime.now(),
                                         'by': by},
                                '$push': {'logs': log_dict}})
