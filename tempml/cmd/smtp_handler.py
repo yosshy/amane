@@ -47,6 +47,7 @@ RELAY_PORT = os.environ.get("TEMPML_RELAY_PORT", 1025)
 DOMAIN = os.environ.get("TEMPML_DOMAIN", "localdomain")
 ML_NAME_FORMAT = os.environ.get("TEMPML_ML_NAME_FORMAT", "ml-%06d")
 ADMIN_FILE = os.environ.get("TEMPML_ADMIN_FILE")
+LOG_FILE = os.environ.get("TEMPML_LOG_FILE")
 
 
 def normalize(addresses):
@@ -67,7 +68,7 @@ class TempMlSMTPServer(smtpd.SMTPServer):
     def __init__(self, listen_address=None, listen_port=None, relay_host=None,
                  relay_port=None, db_url=None, db_name=None,
                  ml_name_format=None, new_ml_account=None, domain=None,
-                 admin_file=None, debug=False):
+                 admin_file=None, debug=False, **kwargs):
 
         self.relay_host = relay_host
         self.relay_port = relay_port
@@ -84,7 +85,7 @@ class TempMlSMTPServer(smtpd.SMTPServer):
 
         db.init_db(db_url, db_name)
 
-        return super(TempMlSMTPServer, self).__init__(
+        return smtpd.SMTPServer.__init__(self,
             (listen_address, listen_port), None)
 
     def process_message(self, peer, mailfrom, rcpttos, data):
@@ -93,7 +94,10 @@ class TempMlSMTPServer(smtpd.SMTPServer):
             _message = MIMEMultipart()
             for header, value in message.items():
                 _message[header] = value
-            _message.attach(MIMEText(message.get_payload()))
+            payload = MIMEText(message.get_payload(decode=True))
+            payload.set_type(message.get_content_type())
+            payload.set_charset(message.get_content_charset())
+            _message.attach(payload)
             message = _message
 
         from_str = message.get('from', "").strip()
@@ -107,7 +111,10 @@ class TempMlSMTPServer(smtpd.SMTPServer):
         to = normalize(to_str.split(','))
         cc = normalize(cc_str.split(','))
 
-        # checking cross-post
+        # Quick hack
+        mailfrom = list(_from)[0]
+
+        # Check cross-post
         mls = [_ for _ in (to | cc) if _.endswith("@" + self.domain)]
         if len(mls) == 0:
             logging.error("No ML specified")
@@ -149,11 +156,13 @@ class TempMlSMTPServer(smtpd.SMTPServer):
         if message.get('subject', "") == "":
             if len(cc - self.admins) > 0:
                 db.del_members(ml_name, (cc - self.admins), mailfrom)
+                logging.info("removed %s from %s", (cc - self.admins), ml_name)
             return
 
         # Checking To: and Cc:
         if len(cc - self.admins) > 0:
             db.add_members(ml_name, (cc - self.admins), mailfrom)
+            logging.info("added %s into %s", (cc - self.admins), ml_name)
 
         # Send a post to the members of the ML
         self.send_post(ml_name, message, mailfrom)
@@ -179,7 +188,7 @@ class TempMlSMTPServer(smtpd.SMTPServer):
         else:
             message['reply-to'] = _from
         subject = message['subject']
-        subject = re.sub(r"^(Re:|re:)\s*\[%s\]\s*" % ml_name, "", subject)
+        subject = re.sub(r"^(RE:|Re:|re:)\s*\[%s\]\s*" % ml_name, "", subject)
         message.replace_header('Subject', "[%s] %s" % (
                                ml_name, message['subject']))
 
@@ -195,22 +204,10 @@ class TempMlSMTPServer(smtpd.SMTPServer):
         db.log_post(ml_name, members, mailfrom)
 
 
-def main(version=False, **kwargs):
+def main():
     """
     The main routine
     """
-    if version:
-        print(pbr.version.VersionInfo('tempml'))
-        return 0
-
-    log.setup(filename=kwargs.pop('log_file'), debug=kwargs['debug'])
-    logging.info("args: %s", kwargs)
-
-    server = TempMlSMTPServer(**kwargs)
-    asyncore.loop()
-
-
-if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--version',
                         help='Print version and exit',
@@ -250,7 +247,20 @@ if __name__ == '__main__':
                         default=ADMIN_FILE)
     parser.add_argument('--log-file',
                         help='log file name',
-                        default=None)
+                        default=LOG_FILE)
 
     opts = parser.parse_args()
-    sys.exit(main(**opts.__dict__))
+
+    if opts.version:
+        print(pbr.version.VersionInfo('tempml'))
+        return 0
+
+    log.setup(filename=opts.log_file, debug=opts.debug)
+    logging.info("args: %s", opts.__dict__)
+
+    server = TempMlSMTPServer(**opts.__dict__)
+    asyncore.loop()
+
+
+if __name__ == '__main__':
+    sys.exit(main())
