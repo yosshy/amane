@@ -142,8 +142,7 @@ class TempMlSMTPServer(smtpd.SMTPServer):
                 "", message.get('Original-Recipient', ""))
             error = normalize(error_str.split(','))
             if len(error) > 0 and len(ml_name) > 0:
-                db.del_members(ml_name, error, 'error')
-                logging.error("returned; removed %s from %s", error, ml_name)
+                logging.error("not delivered to %s for %s", error, ml_name)
             return
 
         # Want a new ML?

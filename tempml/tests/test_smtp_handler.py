@@ -418,8 +418,8 @@ class ProcessMessageTest(unittest.TestCase):
               'Subject: Error\n' \
               '\n' \
               'Test mail\n'
-        final_members = {"test1@example.com", "test3@example.com",
-                         "test4@example.com"}
+        final_members = {"test1@example.com", "test2@example.com",
+                         "test3@example.com", "test4@example.com"}
 
         with mock.patch.object(self.handler, 'send_post') as m:
             m.side_effect = self._send_post
