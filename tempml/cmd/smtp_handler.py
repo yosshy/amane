@@ -97,9 +97,10 @@ class TempMlSMTPServer(smtpd.SMTPServer):
             _message = MIMEMultipart()
             for header, value in message.items():
                 _message[header] = value
-            payload = MIMEText(message.get_payload(decode=True))
-            payload.set_type(message.get_content_type())
-            payload.set_charset(message.get_content_charset())
+            charset = message.get_content_charset("us-ascii")
+            subtype = message.get_content_subtype()
+            content = message.get_payload(decode=True).decode(charset)
+            payload = MIMEText(content, _charset=charset, _subtype=subtype)
             _message.attach(payload)
             message = _message
 
