@@ -104,10 +104,10 @@ class TempMlSMTPServer(smtpd.SMTPServer):
             _message.attach(payload)
             message = _message
 
-        from_str = message.get('from', "").strip()
-        to_str = message.get('to', "").strip()
-        cc_str = message.get('cc', "").strip()
-        subject = message.get('subject', "").strip()
+        from_str = message.get('From', "").strip()
+        to_str = message.get('To', "").strip()
+        cc_str = message.get('Cc', "").strip()
+        subject = message.get('Subject', "").strip()
         logging.info("Processing: from=%s|to=%s|cc=%s|subject=%s|",
                      from_str, to_str, cc_str, subject)
 
@@ -141,7 +141,7 @@ class TempMlSMTPServer(smtpd.SMTPServer):
         if ml_name.endswith(ERROR_SUFFIX):
             ml_name = ml_name.replace(ERROR_SUFFIX, "")
             error_str = REMOVE_RFC822.sub(
-                "", message.get('original-recipient', ""))
+                "", message.get('Original-Recipient', ""))
             error = normalize(error_str.split(','))
             if len(error) > 0 and len(ml_name) > 0:
                 db.del_members(ml_name, error, 'error')
@@ -168,7 +168,7 @@ class TempMlSMTPServer(smtpd.SMTPServer):
             return const.SMTP_STATUS_NOT_MEMBER
 
         # Remove cc'd members from the ML members if the subject is empty
-        if message.get('subject', "") == "":
+        if subject == "":
             if len(cc - self.admins) > 0:
                 db.del_members(ml_name, (cc - self.admins), mailfrom)
                 logging.info("removed %s from %s", (cc - self.admins), ml_name)
