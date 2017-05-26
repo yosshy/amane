@@ -88,8 +88,8 @@ class TempMlSMTPServer(smtpd.SMTPServer):
 
         db.init_db(db_url, db_name)
 
-        return smtpd.SMTPServer.__init__(self,
-            (listen_address, listen_port), None)
+        return smtpd.SMTPServer.__init__(
+            self, (listen_address, listen_port), None)
 
     def process_message(self, peer, mailfrom, rcpttos, data):
         message = email.message_from_string(data)
