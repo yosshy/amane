@@ -83,7 +83,7 @@ class ProcessMessageTest(unittest.TestCase):
     def tearDown(self):
         pass
 
-    def _send_post(self, ml_name, message, mailfrom):
+    def _send_post(self, ml_name, message, mailfrom, members=None):
         self.ml_name_arg = ml_name
         self.message_arg = message
         self.mailfrom_arg = mailfrom
@@ -458,7 +458,7 @@ class ProcessMessageWithAdminsTest(unittest.TestCase):
     def tearDown(self):
         pass
 
-    def _send_post(self, ml_name, message, mailfrom):
+    def _send_post(self, ml_name, message, mailfrom, members=None):
         self.ml_name_arg = ml_name
         self.message_arg = message
         self.mailfrom_arg = mailfrom
@@ -826,7 +826,6 @@ class SendPostTest(unittest.TestCase):
             self.assertEqual(message['reply-to'], 'ml-000010@testml.net')
             self.assertEqual(message.get('cc', ''), '')
             self.assertEqual(message['subject'], '[ml-000010] test')
-            self.assertEqual(self.members, members)
 
     @mock.patch('tempml.cmd.smtp_handler.smtplib.SMTP', DummySMTPClient)
     def test_2_ccs(self):
@@ -860,4 +859,36 @@ class SendPostTest(unittest.TestCase):
                 message['cc'],
                 'Test3 <test3@example.com>, Test4 <test4@example.com>')
             self.assertEqual(message['subject'], '[ml-000010] test')
-            self.assertEqual(self.members, members)
+
+    @mock.patch('tempml.cmd.smtp_handler.smtplib.SMTP', DummySMTPClient)
+    def test_members(self):
+        db_members = {"test1@example.com", "test2@example.com"}
+        cc_members = {"test3@example.com", "test4@example.com"}
+        fake_db.create_ml('ml-000010', db_members, "test1@example.com")
+        msg = 'From: Test1 <test1@example.com>\n' \
+              'To: ml-000010 <ml-000010@testml.net>\n' \
+              'Cc: Test3 <test3@example.com>, Test4 <test4@example.com>\n' \
+              'Subject: test\n' \
+              'Content-Type: Multipart/Mixed; boundary="hoge"\n' \
+              'Content-Transfer-Encoding: 7bit\n' \
+              '\n' \
+              '--hoge\n' \
+              'Content-Type: Text/Plain; charset=US-ASCII\n' \
+              'Content-Transfer-Encoding: 7bit\n' \
+              '\n' \
+              'Test mail\n' \
+              '\n' \
+              '--hoge\n'
+        msg_obj = email.message_from_string(msg)
+
+        with mock.patch.object(DummySMTPClient, 'sendmail') as m:
+            m.side_effect = self._sendmail
+            self.handler.send_post('ml-000010', msg_obj, "xyz", cc_members)
+            self.assertEqual(self.members, cc_members)
+            message = email.message_from_string(self.message)
+            self.assertEqual(message['to'], 'ml-000010@testml.net')
+            self.assertEqual(message['reply-to'], 'ml-000010@testml.net')
+            self.assertEqual(
+                message['cc'],
+                'Test3 <test3@example.com>, Test4 <test4@example.com>')
+            self.assertEqual(message['subject'], '[ml-000010] test')
