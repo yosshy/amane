@@ -1,9 +1,8 @@
 CHANGES
 =======
 
-* smtp\_handler: added make\_mimetext()
 * smtp\_handler: support welcome, readme and goodby messages
-* a
+* ChangeLog: updated
 * smtp\_handler: modified a comment
 * smtp\_handler: added members keyword to send\_post()
 * smtp\_handler: improved unit tests for send\_post()
