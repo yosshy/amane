@@ -1,6 +1,23 @@
 CHANGES
 =======
 
+* smtp\_handler: support welcome, readme and goodby messages
+* ChangeLog: updated
+* smtp\_handler: modified a comment
+* smtp\_handler: added members keyword to send\_post()
+* smtp\_handler: improved unit tests for send\_post()
+* smtp\_handler: don't remove non-delivered members
+* smtp\_handler: updated calling \_\_init\_\_() of super-class in TempMlSMTPHandler
+* smtp\_handler: applied PEP8
+* smtp\_handler: Applied camel-cases to headers
+* smtp\_handler: applied Python 3.4
+* smtp\_handler: added error handler
+* \_\_main\_\_: removed
+
+0.2
+---
+
+* ChangeLog: updated
 * smtp\_handler: many improvements and fixes
 * db: fixed a bug in log\_post()
 * log: removed handlers option for Python 2.7
