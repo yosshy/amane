@@ -47,6 +47,9 @@ DOMAIN = os.environ.get("TEMPML_DOMAIN", "localdomain")
 ML_NAME_FORMAT = os.environ.get("TEMPML_ML_NAME_FORMAT", "ml-%06d")
 ADMIN_FILE = os.environ.get("TEMPML_ADMIN_FILE")
 LOG_FILE = os.environ.get("TEMPML_LOG_FILE")
+README_FILE = os.environ.get("TEMPML_README_FILE")
+WELCOME_FILE = os.environ.get("TEMPML_WELCOME_FILE")
+GOODBY_FILE = os.environ.get("TEMPML_GOODBY_FILE")
 
 ERROR_SUFFIX = '-error'
 REMOVE_RFC822 = re.compile("rfc822;", re.I)
@@ -65,12 +68,30 @@ def normalize(addresses):
     return set(result)
 
 
+def make_mimetext(template, params, members, name=None, charset="utf-8"):
+    try:
+        content = template % params
+        content = content.replace("\r\n", "\n").replace("\n", "\r\n")
+        content += "\r\n".join(list(members))
+        part = MIMEText(content, _charset=charset)
+        if name:
+            part.set_param('name', name)
+        return part
+    except:
+        return
+
+
 class TempMlSMTPServer(smtpd.SMTPServer):
+
+    readme_msg = ""
+    welcome_msg = ""
+    goodby_msg = ""
 
     def __init__(self, listen_address=None, listen_port=None, relay_host=None,
                  relay_port=None, db_url=None, db_name=None,
                  ml_name_format=None, new_ml_account=None, domain=None,
-                 admin_file=None, debug=False, **kwargs):
+                 admin_file=None, readme_file=None, welcome_file=None,
+                 goodby_file=None, debug=False, **kwargs):
 
         self.relay_host = relay_host
         self.relay_port = relay_port
@@ -84,6 +105,15 @@ class TempMlSMTPServer(smtpd.SMTPServer):
             with open(admin_file) as f:
                 self.admins = normalize(f.readlines())
         logging.info("admins: %s", self.admins)
+        if readme_file:
+            with open(readme_file) as f:
+                self.readme_msg = f.read()
+        if welcome_file:
+            with open(welcome_file) as f:
+                self.welcome_msg = f.read()
+        if goodby_file:
+            with open(goodby_file) as f:
+                self.goodby_msg = f.read()
 
         db.init_db(db_url, db_name)
 
@@ -98,8 +128,8 @@ class TempMlSMTPServer(smtpd.SMTPServer):
             charset = message.get_content_charset("us-ascii")
             subtype = message.get_content_subtype()
             content = message.get_payload(decode=True).decode(charset)
-            payload = MIMEText(content, _charset=charset, _subtype=subtype)
-            _message.attach(payload)
+            part = MIMEText(content, _charset=charset, _subtype=subtype)
+            _message.attach(part)
             message = _message
 
         from_str = message.get('From', "").strip()
@@ -148,8 +178,24 @@ class TempMlSMTPServer(smtpd.SMTPServer):
         # Want a new ML?
         if ml_name == self.new_ml_account:
             ml_name = self.ml_name_format % db.increase_counter()
-            db.create_ml(ml_name, (to | cc | _from) - self.admins, mailfrom)
-            self.send_post(ml_name, message, mailfrom)
+            members = (to | cc | _from) - self.admins
+            db.create_ml(ml_name, members, mailfrom)
+
+            if self.welcome_msg:
+                params = dict(ml_name=ml_name, ml_address=ml_address,
+                              mailfrom=mailfrom)
+                _message = MIMEMultipart()
+                for header, value in message.items():
+                    _message[header] = value
+                part = make_mimetext(self.welcome_msg, params, members)
+                if part:
+                    _message.attach(part)
+                    message.set_param('name', 'original-message')
+                    message.set_type("message/rfc822")
+                    _message.attach(message)
+                    message = _message
+
+            self.send_post(ml_name, message, mailfrom, members=members)
             return
 
         # Post a message to an existing ML
@@ -164,17 +210,45 @@ class TempMlSMTPServer(smtpd.SMTPServer):
             logging.error("Non-member post")
             return const.SMTP_STATUS_NOT_MEMBER
 
+        # Remove admin members from cc
+        cc -= self.admins
+        params = dict(ml_name=ml_name, ml_address=ml_address,
+                      mailfrom=mailfrom, cc="\r\n".join(list(cc)))
+
         # Remove cc'd members from the ML members if the subject is empty
         if subject == "":
-            if len(cc - self.admins) > 0:
-                db.del_members(ml_name, (cc - self.admins), mailfrom)
-                logging.info("removed %s from %s", (cc - self.admins), ml_name)
+            if len(cc) > 0:
+
+                # Sending goodby message
+                if self.goodby_msg:
+                    _message = MIMEMultipart()
+                    for header, value in message.items():
+                        _message[header] = value
+                    part = make_mimetext(self.goodby_msg, params, members - cc)
+                    if part:
+                        _message.attach(part)
+                        message.set_param('name', 'original-message')
+                        message.set_type("message/rfc822")
+                        _message.attach(message)
+                        message = _message
+                    self.send_post(ml_name, message, mailfrom)
+
+                db.del_members(ml_name, cc, mailfrom)
+                logging.info("removed %s from %s", cc, ml_name)
             return
 
         # Checking Cc:
-        if len(cc - self.admins) > 0:
-            db.add_members(ml_name, (cc - self.admins), mailfrom)
-            logging.info("added %s into %s", (cc - self.admins), ml_name)
+        if len(cc) > 0:
+            db.add_members(ml_name, cc, mailfrom)
+            logging.info("added %s into %s", cc, ml_name)
+            members = db.get_members(ml_name)
+
+        # Attaching readme
+        if self.readme_msg:
+            part = make_mimetext(self.readme_msg, params, members,
+                                 name='readme.txt')
+            if part:
+                message.attach(part)
 
         # Send a post to the members of the ML
         self.send_post(ml_name, message, mailfrom)
@@ -204,7 +278,7 @@ class TempMlSMTPServer(smtpd.SMTPServer):
         message.add_header('Reply-To', _to)
         message.add_header('Return-Path', _from)
         subject = message.get('Subject', '')
-        subject = re.sub(r"^(RE:|Re:|re:)\s*\[%s\]\s*" % ml_name, "", subject)
+        subject = re.sub(r"^(re:|\[%s\]|\s)*" % ml_name, "", subject, flags=re.I)
         message.replace_header('Subject', "[%s] %s" % (ml_name, subject))
 
         # Send a post to the relay host
@@ -264,6 +338,15 @@ def main():
     parser.add_argument('--log-file',
                         help='log file name',
                         default=LOG_FILE)
+    parser.add_argument('--readme-file',
+                        help='ML usage file',
+                        default=README_FILE)
+    parser.add_argument('--welcome-file',
+                        help='Message file for creating ML',
+                        default=WELCOME_FILE)
+    parser.add_argument('--goodby-file',
+                        help='Message file for removing member',
+                        default=GOODBY_FILE)
 
     opts = parser.parse_args()
 
