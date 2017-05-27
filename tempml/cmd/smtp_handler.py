@@ -171,7 +171,7 @@ class TempMlSMTPServer(smtpd.SMTPServer):
                 logging.info("removed %s from %s", (cc - self.admins), ml_name)
             return
 
-        # Checking To: and Cc:
+        # Checking Cc:
         if len(cc - self.admins) > 0:
             db.add_members(ml_name, (cc - self.admins), mailfrom)
             logging.info("added %s into %s", (cc - self.admins), ml_name)
