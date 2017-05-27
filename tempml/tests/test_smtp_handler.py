@@ -805,8 +805,16 @@ class SendPostTest(unittest.TestCase):
         msg = 'From: Test1 <test1@example.com>\n' \
               'To: ml-000010 <ml-000010@testml.net>\n' \
               'Subject: test\n' \
+              'Content-Type: Multipart/Mixed; boundary="hoge"\n' \
+              'Content-Transfer-Encoding: 7bit\n' \
               '\n' \
-              'Test mail\n'
+              '--hoge\n' \
+              'Content-Type: Text/Plain; charset=US-ASCII\n' \
+              'Content-Transfer-Encoding: 7bit\n' \
+              '\n' \
+              'Test mail\n' \
+              '\n' \
+              '--hoge\n'
         msg_obj = email.message_from_string(msg)
 
         with mock.patch.object(DummySMTPClient, 'sendmail') as m:
@@ -826,12 +834,19 @@ class SendPostTest(unittest.TestCase):
                    "test3@example.com", "test4@example.com"}
         fake_db.create_ml('ml-000010', members, "test1@example.com")
         msg = 'From: Test1 <test1@example.com>\n' \
-              'To: ml-000010 <ml-000010@testml.net>, ' \
-              'Test2 <test2@example.com>\n' \
+              'To: ml-000010 <ml-000010@testml.net>\n' \
               'Cc: Test3 <test3@example.com>, Test4 <test4@example.com>\n' \
               'Subject: test\n' \
+              'Content-Type: Multipart/Mixed; boundary="hoge"\n' \
+              'Content-Transfer-Encoding: 7bit\n' \
               '\n' \
-              'Test mail\n'
+              '--hoge\n' \
+              'Content-Type: Text/Plain; charset=US-ASCII\n' \
+              'Content-Transfer-Encoding: 7bit\n' \
+              '\n' \
+              'Test mail\n' \
+              '\n' \
+              '--hoge\n'
         msg_obj = email.message_from_string(msg)
 
         with mock.patch.object(DummySMTPClient, 'sendmail') as m:
