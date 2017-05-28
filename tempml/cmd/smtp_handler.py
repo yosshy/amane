@@ -187,13 +187,10 @@ class TempMlSMTPServer(smtpd.SMTPServer):
                 _message = MIMEMultipart()
                 for header, value in message.items():
                     _message[header] = value
-                part = make_mimetext(self.welcome_msg, params, members)
+                part = make_mimetext(self.welcome_msg, params, members,
+                                     name='Welcome.txt')
                 if part:
-                    _message.attach(part)
-                    message.set_param('name', 'original-message')
-                    message.set_type("message/rfc822")
-                    _message.attach(message)
-                    message = _message
+                    message.attach(part)
 
             self.send_post(ml_name, message, mailfrom, members=members)
             return
@@ -224,13 +221,10 @@ class TempMlSMTPServer(smtpd.SMTPServer):
                     _message = MIMEMultipart()
                     for header, value in message.items():
                         _message[header] = value
-                    part = make_mimetext(self.goodbye_msg, params, members - cc)
+                    part = make_mimetext(self.goodbye_msg, params,
+                                         members - cc, name='Goodbye.txt')
                     if part:
-                        _message.attach(part)
-                        message.set_param('name', 'original-message')
-                        message.set_type("message/rfc822")
-                        _message.attach(message)
-                        message = _message
+                        message.attach(part)
                     self.send_post(ml_name, message, mailfrom)
 
                 db.del_members(ml_name, cc, mailfrom)
@@ -246,7 +240,7 @@ class TempMlSMTPServer(smtpd.SMTPServer):
         # Attaching readme
         if self.readme_msg:
             part = make_mimetext(self.readme_msg, params, members,
-                                 name='readme.txt')
+                                 name='Readme.txt')
             if part:
                 message.attach(part)
 
