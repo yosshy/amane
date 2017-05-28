@@ -49,7 +49,7 @@ ADMIN_FILE = os.environ.get("TEMPML_ADMIN_FILE")
 LOG_FILE = os.environ.get("TEMPML_LOG_FILE")
 README_FILE = os.environ.get("TEMPML_README_FILE")
 WELCOME_FILE = os.environ.get("TEMPML_WELCOME_FILE")
-GOODBY_FILE = os.environ.get("TEMPML_GOODBY_FILE")
+GOODBYE_FILE = os.environ.get("TEMPML_GOODBYE_FILE")
 
 ERROR_SUFFIX = '-error'
 REMOVE_RFC822 = re.compile("rfc822;", re.I)
@@ -85,13 +85,13 @@ class TempMlSMTPServer(smtpd.SMTPServer):
 
     readme_msg = ""
     welcome_msg = ""
-    goodby_msg = ""
+    goodbye_msg = ""
 
     def __init__(self, listen_address=None, listen_port=None, relay_host=None,
                  relay_port=None, db_url=None, db_name=None,
                  ml_name_format=None, new_ml_account=None, domain=None,
                  admin_file=None, readme_file=None, welcome_file=None,
-                 goodby_file=None, debug=False, **kwargs):
+                 goodbye_file=None, debug=False, **kwargs):
 
         self.relay_host = relay_host
         self.relay_port = relay_port
@@ -111,9 +111,9 @@ class TempMlSMTPServer(smtpd.SMTPServer):
         if welcome_file:
             with open(welcome_file) as f:
                 self.welcome_msg = f.read()
-        if goodby_file:
-            with open(goodby_file) as f:
-                self.goodby_msg = f.read()
+        if goodbye_file:
+            with open(goodbye_file) as f:
+                self.goodbye_msg = f.read()
 
         db.init_db(db_url, db_name)
 
@@ -219,12 +219,12 @@ class TempMlSMTPServer(smtpd.SMTPServer):
         if subject == "":
             if len(cc) > 0:
 
-                # Sending goodby message
-                if self.goodby_msg:
+                # Sending goodbye message
+                if self.goodbye_msg:
                     _message = MIMEMultipart()
                     for header, value in message.items():
                         _message[header] = value
-                    part = make_mimetext(self.goodby_msg, params, members - cc)
+                    part = make_mimetext(self.goodbye_msg, params, members - cc)
                     if part:
                         _message.attach(part)
                         message.set_param('name', 'original-message')
@@ -344,9 +344,9 @@ def main():
     parser.add_argument('--welcome-file',
                         help='Message file for creating ML',
                         default=WELCOME_FILE)
-    parser.add_argument('--goodby-file',
+    parser.add_argument('--goodbye-file',
                         help='Message file for removing member',
-                        default=GOODBY_FILE)
+                        default=GOODBYE_FILE)
 
     opts = parser.parse_args()
 
