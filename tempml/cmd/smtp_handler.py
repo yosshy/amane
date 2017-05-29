@@ -186,8 +186,6 @@ class TempMlSMTPServer(smtpd.SMTPServer):
                           mailfrom=mailfrom)
             self.send_message(ml_name, message, mailfrom, members, params,
                               self.welcome_msg, 'Welcome.txt')
-
-            self.send_post(ml_name, message, mailfrom, members)
             return
 
         # Post a message to an existing ML

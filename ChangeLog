@@ -1,6 +1,17 @@
 CHANGES
 =======
 
+* smtp\_handler: make members  of send\_post() a param
+* smtp\_handler: added status handling
+* smtp\_handler: PEP8
+* db: added change\_ml\_status()
+* smtp\_handler: make messages attached files
+* smtp\_handler: modified mis-spells of 'goodbye'
+
+0.3
+---
+
+* ChangeLog: updated
 * smtp\_handler: support welcome, readme and goodby messages
 * ChangeLog: updated
 * smtp\_handler: modified a comment
