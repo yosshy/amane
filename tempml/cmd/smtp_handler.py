@@ -272,7 +272,8 @@ class TempMlSMTPServer(smtpd.SMTPServer):
         message.add_header('Reply-To', _to)
         message.add_header('Return-Path', _from)
         subject = message.get('Subject', '')
-        subject = re.sub(r"^(re:|\[%s\]|\s)*" % ml_name, "", subject, flags=re.I)
+        subject = re.sub(r"^(re:|\[%s\]|\s)*" % ml_name, "", subject,
+                         flags=re.I)
         message.replace_header('Subject', "[%s] %s" % (ml_name, subject))
 
         # Send a post to the relay host
