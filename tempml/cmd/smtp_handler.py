@@ -187,7 +187,7 @@ class TempMlSMTPServer(smtpd.SMTPServer):
             self.send_message(ml_name, message, mailfrom, members, params,
                               self.welcome_msg, 'Welcome.txt')
 
-            self.send_post(ml_name, message, mailfrom, members=members)
+            self.send_post(ml_name, message, mailfrom, members)
             return
 
         # Post a message to an existing ML
@@ -264,9 +264,9 @@ class TempMlSMTPServer(smtpd.SMTPServer):
             message.attach(part)
         finally:
             members = db.get_members(ml_name)
-            self.send_post(ml_name, message, mailfrom, members=members)
+            self.send_post(ml_name, message, mailfrom, members)
 
-    def send_post(self, ml_name, message, mailfrom, members=None):
+    def send_post(self, ml_name, message, mailfrom, members):
         """
         Send a post to the ML members
 
@@ -276,7 +276,7 @@ class TempMlSMTPServer(smtpd.SMTPServer):
         :type message: email.mime.multipart.MIMEMultipart
         :param mailfrom: sender's email address
         :type mailfrom: str
-        :keyword members: recipients
+        :param members: recipients
         :type members: set(str)
         :rtype: None
         """
@@ -296,8 +296,6 @@ class TempMlSMTPServer(smtpd.SMTPServer):
         message.replace_header('Subject', "[%s] %s" % (ml_name, subject))
 
         # Send a post to the relay host
-        if members is None:
-            members = db.get_members(ml_name)
         relay = smtplib.SMTP(self.relay_host, self.relay_port)
         if self.debug:
             relay.set_debuglevel(1)
