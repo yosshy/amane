@@ -360,7 +360,7 @@ class ProcessMessageTest(unittest.TestCase):
                 "test1@example.com",
                 ["ml-000010@tempml.net"],
                 msg)
-            self.assertEqual(m.call_count, 0)
+            self.assertEqual(self.ml_name_arg, 'ml-000010')
             self.assertEqual(fake_db.get_members('ml-000010'), final_members)
 
     def test_del_members_w_2_ccs(self):
@@ -382,7 +382,7 @@ class ProcessMessageTest(unittest.TestCase):
                 "test1@example.com",
                 ["ml-000010@tempml.net"],
                 msg)
-            self.assertEqual(m.call_count, 0)
+            self.assertEqual(self.ml_name_arg, 'ml-000010')
             self.assertEqual(fake_db.get_members('ml-000010'), final_members)
 
     def test_del_members_w_2_tos_and_2_ccs(self):
@@ -405,7 +405,7 @@ class ProcessMessageTest(unittest.TestCase):
                 "test1@example.com",
                 ["ml-000010@tempml.net"],
                 msg)
-            self.assertEqual(m.call_count, 0)
+            self.assertEqual(self.ml_name_arg, 'ml-000010')
             self.assertEqual(fake_db.get_members('ml-000010'), final_members)
 
     def test_error_return(self):
@@ -429,6 +429,152 @@ class ProcessMessageTest(unittest.TestCase):
                 ["ml-000010@tempml.net"],
                 msg)
             self.assertEqual(m.call_count, 0)
+            self.assertEqual(fake_db.get_members('ml-000010'), final_members)
+
+    def test_close_ml(self):
+        initial_members = {"test1@example.com", "test2@example.com",
+                           "test3@example.com", "test4@example.com"}
+        fake_db.create_ml('ml-000010', initial_members, "test1@example.com")
+        msg = 'From: Test1 <test1@example.com>\n' \
+              'To: ml-000010 <ml-000010@testml.net>, ' \
+              'Test2 <test2@example.com>\n' \
+              'Subject: CLOSE\n' \
+              '\n' \
+              'Test mail\n'
+        final_members = {"test1@example.com", "test2@example.com",
+                         "test3@example.com", "test4@example.com"}
+
+        with mock.patch.object(self.handler, 'send_post') as m:
+            m.side_effect = self._send_post
+            self.handler.process_message(
+                ("127.0.0.2", 1000),
+                "test1@example.com",
+                ["ml-000010@tempml.net"],
+                msg)
+            self.assertEqual(self.ml_name_arg, 'ml-000010')
+            self.assertEqual(fake_db.get_members('ml-000010'), final_members)
+            ml = fake_db.get_ml('ml-000010')
+            self.assertEqual(ml['status'], const.STATUS_CLOSED)
+
+    def test_post_closed_ml(self):
+        initial_members = {"test1@example.com", "test2@example.com",
+                           "test3@example.com", "test4@example.com"}
+        fake_db.create_ml('ml-000010', initial_members, "test1@example.com")
+        fake_db.change_ml_status('ml-000010', const.STATUS_CLOSED, "test2@example.com")
+        msg = 'From: Test1 <test1@example.com>\n' \
+              'To: ml-000010 <ml-000010@testml.net>, ' \
+              'Test2 <test2@example.com>\n' \
+              'Subject: Test\n' \
+              '\n' \
+              'Test mail\n'
+        final_members = {"test1@example.com", "test2@example.com",
+                         "test3@example.com", "test4@example.com"}
+
+        with mock.patch.object(self.handler, 'send_post') as m:
+            m.side_effect = self._send_post
+            ret = self.handler.process_message(
+                ("127.0.0.2", 1000),
+                "test1@example.com",
+                ["ml-000010@tempml.net"],
+                msg)
+            self.assertEqual(ret, const.SMTP_STATUS_CLOSED_ML)
+
+    def test_close_closed_ml(self):
+        initial_members = {"test1@example.com", "test2@example.com",
+                           "test3@example.com", "test4@example.com"}
+        fake_db.create_ml('ml-000010', initial_members, "test1@example.com")
+        fake_db.change_ml_status('ml-000010', const.STATUS_CLOSED, "test2@example.com")
+        msg = 'From: Test1 <test1@example.com>\n' \
+              'To: ml-000010 <ml-000010@testml.net>, ' \
+              'Test2 <test2@example.com>\n' \
+              'Subject: CLOSE\n' \
+              '\n' \
+              'Test mail\n'
+        final_members = {"test1@example.com", "test2@example.com",
+                         "test3@example.com", "test4@example.com"}
+
+        with mock.patch.object(self.handler, 'send_post') as m:
+            m.side_effect = self._send_post
+            ret = self.handler.process_message(
+                ("127.0.0.2", 1000),
+                "test1@example.com",
+                ["ml-000010@tempml.net"],
+                msg)
+            self.assertEqual(ret, const.SMTP_STATUS_CLOSED_ML)
+
+    def test_reopen_closed_ml(self):
+        initial_members = {"test1@example.com", "test2@example.com",
+                           "test3@example.com", "test4@example.com"}
+        fake_db.create_ml('ml-000010', initial_members, "test1@example.com")
+        fake_db.change_ml_status('ml-000010', const.STATUS_CLOSED, "test2@example.com")
+        msg = 'From: Test1 <test1@example.com>\n' \
+              'To: ml-000010 <ml-000010@testml.net>, ' \
+              'Test2 <test2@example.com>\n' \
+              'Subject: REOPEN\n' \
+              '\n' \
+              'Test mail\n'
+        final_members = {"test1@example.com", "test2@example.com",
+                         "test3@example.com", "test4@example.com"}
+
+        with mock.patch.object(self.handler, 'send_post') as m:
+            m.side_effect = self._send_post
+            self.handler.process_message(
+                ("127.0.0.2", 1000),
+                "test1@example.com",
+                ["ml-000010@tempml.net"],
+                msg)
+            self.assertEqual(self.ml_name_arg, 'ml-000010')
+            self.assertEqual(fake_db.get_members('ml-000010'), final_members)
+            ml = fake_db.get_ml('ml-000010')
+            self.assertEqual(ml['status'], const.STATUS_OPEN)
+
+    def test_reopen_orphaned_ml(self):
+        initial_members = {"test1@example.com", "test2@example.com",
+                           "test3@example.com", "test4@example.com"}
+        fake_db.create_ml('ml-000010', initial_members, "test1@example.com")
+        fake_db.change_ml_status('ml-000010', const.STATUS_ORPHANED, "test2@example.com")
+        msg = 'From: Test1 <test1@example.com>\n' \
+              'To: ml-000010 <ml-000010@testml.net>, ' \
+              'Test2 <test2@example.com>\n' \
+              'Subject: REOPEN\n' \
+              '\n' \
+              'Test mail\n'
+        final_members = {"test1@example.com", "test2@example.com",
+                         "test3@example.com", "test4@example.com"}
+
+        with mock.patch.object(self.handler, 'send_post') as m:
+            m.side_effect = self._send_post
+            self.handler.process_message(
+                ("127.0.0.2", 1000),
+                "test1@example.com",
+                ["ml-000010@tempml.net"],
+                msg)
+            self.assertEqual(self.ml_name_arg, 'ml-000010')
+            self.assertEqual(fake_db.get_members('ml-000010'), final_members)
+            ml = fake_db.get_ml('ml-000010')
+            self.assertEqual(ml['status'], const.STATUS_OPEN)
+
+    def test_reopen_open_ml(self):
+        initial_members = {"test1@example.com", "test2@example.com",
+                           "test3@example.com", "test4@example.com"}
+        fake_db.create_ml('ml-000010', initial_members, "test1@example.com")
+        msg = 'From: Test1 <test1@example.com>\n' \
+              'To: ml-000010 <ml-000010@testml.net>, ' \
+              'Test2 <test2@example.com>\n' \
+              'Subject: REOPEN\n' \
+              '\n' \
+              'Test mail\n'
+        final_members = {"test1@example.com", "test2@example.com",
+                         "test3@example.com", "test4@example.com"}
+
+        with mock.patch.object(self.handler, 'send_post') as m:
+            m.side_effect = self._send_post
+            self.handler.process_message(
+                ("127.0.0.2", 1000),
+                "test1@example.com",
+                ["ml-000010@tempml.net"],
+                msg)
+            self.assertEqual(self.ml_name_arg, 'ml-000010')
             self.assertEqual(fake_db.get_members('ml-000010'), final_members)
 
 
@@ -720,7 +866,7 @@ class ProcessMessageWithAdminsTest(unittest.TestCase):
                 "test2@example.com",
                 ["ml-000010@tempml.net"],
                 msg)
-            self.assertEqual(m.call_count, 0)
+            self.assertEqual(self.ml_name_arg, 'ml-000010')
             self.assertEqual(fake_db.get_members('ml-000010'), final_members)
 
     def test_del_members_w_2_ccs_i_admin(self):
@@ -741,7 +887,7 @@ class ProcessMessageWithAdminsTest(unittest.TestCase):
                 "test1@example.com",
                 ["ml-000010@tempml.net"],
                 msg)
-            self.assertEqual(m.call_count, 0)
+            self.assertEqual(self.ml_name_arg, 'ml-000010')
             self.assertEqual(fake_db.get_members('ml-000010'), final_members)
 
     def test_del_members_w_2_tos_and_2_ccs_i_admin(self):
@@ -763,7 +909,7 @@ class ProcessMessageWithAdminsTest(unittest.TestCase):
                 "test1@example.com",
                 ["ml-000010@tempml.net"],
                 msg)
-            self.assertEqual(m.call_count, 0)
+            self.assertEqual(self.ml_name_arg, 'ml-000010')
             self.assertEqual(fake_db.get_members('ml-000010'), final_members)
 
 

@@ -50,6 +50,8 @@ LOG_FILE = os.environ.get("TEMPML_LOG_FILE")
 README_FILE = os.environ.get("TEMPML_README_FILE")
 WELCOME_FILE = os.environ.get("TEMPML_WELCOME_FILE")
 GOODBYE_FILE = os.environ.get("TEMPML_GOODBYE_FILE")
+CLOSED_FILE = os.environ.get("TEMPML_CLOSED_FILE")
+REOPEN_FILE = os.environ.get("TEMPML_REOPEN_FILE")
 
 ERROR_SUFFIX = '-error'
 REMOVE_RFC822 = re.compile("rfc822;", re.I)
@@ -68,30 +70,20 @@ def normalize(addresses):
     return set(result)
 
 
-def make_mimetext(template, params, members, name=None, charset="utf-8"):
-    try:
-        content = template % params
-        content = content.replace("\r\n", "\n").replace("\n", "\r\n")
-        content += "\r\n".join(list(members))
-        part = MIMEText(content, _charset=charset)
-        if name:
-            part.set_param('name', name)
-        return part
-    except:
-        return
-
-
 class TempMlSMTPServer(smtpd.SMTPServer):
 
     readme_msg = ""
     welcome_msg = ""
     goodbye_msg = ""
+    closed_msg = ""
+    reopen_msg = ""
 
     def __init__(self, listen_address=None, listen_port=None, relay_host=None,
                  relay_port=None, db_url=None, db_name=None,
                  ml_name_format=None, new_ml_account=None, domain=None,
                  admin_file=None, readme_file=None, welcome_file=None,
-                 goodbye_file=None, debug=False, **kwargs):
+                 goodbye_file=None, closed_file=None, reopen_file=None,
+                 debug=False, **kwargs):
 
         self.relay_host = relay_host
         self.relay_port = relay_port
@@ -114,6 +106,12 @@ class TempMlSMTPServer(smtpd.SMTPServer):
         if goodbye_file:
             with open(goodbye_file) as f:
                 self.goodbye_msg = f.read()
+        if closed_file:
+            with open(closed_file) as f:
+                self.closed_msg = f.read()
+        if reopen_file:
+            with open(reopen_file) as f:
+                self.reopen_msg = f.read()
 
         db.init_db(db_url, db_name)
 
@@ -136,6 +134,7 @@ class TempMlSMTPServer(smtpd.SMTPServer):
         to_str = message.get('To', "").strip()
         cc_str = message.get('Cc', "").strip()
         subject = message.get('Subject', "").strip()
+        command = subject.strip().lower()
         logging.info("Processing: from=%s|to=%s|cc=%s|subject=%s|",
                      from_str, to_str, cc_str, subject)
 
@@ -158,6 +157,8 @@ class TempMlSMTPServer(smtpd.SMTPServer):
         # Aquire the ML name
         ml_address = mls[0]
         ml_name = ml_address.replace("@" + self.domain, "")
+        params = dict(ml_name=ml_name, ml_address=ml_address,
+                      mailfrom=mailfrom)
 
         # Remove the ML name from to'd and cc'd address lists
         if ml_address in to:
@@ -181,31 +182,50 @@ class TempMlSMTPServer(smtpd.SMTPServer):
             members = (to | cc | _from) - self.admins
             db.create_ml(ml_name, members, mailfrom)
 
-            if self.welcome_msg:
-                params = dict(ml_name=ml_name, ml_address=ml_address,
-                              mailfrom=mailfrom)
-                _message = MIMEMultipart()
-                for header, value in message.items():
-                    _message[header] = value
-                part = make_mimetext(self.welcome_msg, params, members,
-                                     name='Welcome.txt')
-                if part:
-                    message.attach(part)
+            params = dict(ml_name=ml_name, ml_address=ml_address,
+                          mailfrom=mailfrom)
+            self.send_message(ml_name, message, mailfrom, members, params,
+                              self.welcome_msg, 'Welcome.txt')
 
             self.send_post(ml_name, message, mailfrom, members=members)
             return
 
         # Post a message to an existing ML
-        # Checking members
-        members = db.get_members(ml_name)
-        if members is None:
-            logging.error("No such ML")
+
+        # Check ML exists
+        ml = db.get_ml(ml_name)
+        if ml is None:
+            logging.error("No such ML: %s", ml_name)
             return const.SMTP_STATUS_NO_SUCH_ML
 
         # Checking whether the sender is one of the ML members
+        members = db.get_members(ml_name)
         if mailfrom not in (members | self.admins):
             logging.error("Non-member post")
             return const.SMTP_STATUS_NOT_MEMBER
+
+        # Check ML status
+        ml_status = ml['status']
+        if ml_status == const.STATUS_CLOSED:
+            if command == "reopen":
+                self.send_message(ml_name, message, mailfrom, members, params,
+                                  self.reopen_msg, 'Reopen.txt')
+                db.change_ml_status(ml_name, const.STATUS_OPEN, mailfrom)
+                logging.info("reopened %s by %s", ml_name, mailfrom)
+                return
+
+            logging.error("ML is closed: %s", ml_name)
+            return const.SMTP_STATUS_CLOSED_ML
+
+        elif command == "close":
+            self.send_message(ml_name, message, mailfrom, members, params,
+                              self.closed_msg, 'Closed.txt')
+            db.change_ml_status(ml_name, const.STATUS_CLOSED, mailfrom)
+            logging.info("closed %s by %s", ml_name, mailfrom)
+            return
+
+        if ml_status != const.STATUS_OPEN:
+            db.change_ml_status(ml_name, const.STATUS_OPEN, mailfrom)
 
         # Remove admin members from cc
         cc -= self.admins
@@ -215,18 +235,8 @@ class TempMlSMTPServer(smtpd.SMTPServer):
         # Remove cc'd members from the ML members if the subject is empty
         if subject == "":
             if len(cc) > 0:
-
-                # Sending goodbye message
-                if self.goodbye_msg:
-                    _message = MIMEMultipart()
-                    for header, value in message.items():
-                        _message[header] = value
-                    part = make_mimetext(self.goodbye_msg, params,
-                                         members - cc, name='Goodbye.txt')
-                    if part:
-                        message.attach(part)
-                    self.send_post(ml_name, message, mailfrom)
-
+                self.send_message(ml_name, message, mailfrom, members - cc,
+                                  params, self.goodbye_msg, 'Goodbye.txt')
                 db.del_members(ml_name, cc, mailfrom)
                 logging.info("removed %s from %s", cc, ml_name)
             return
@@ -237,15 +247,24 @@ class TempMlSMTPServer(smtpd.SMTPServer):
             logging.info("added %s into %s", cc, ml_name)
             members = db.get_members(ml_name)
 
-        # Attaching readme
-        if self.readme_msg:
-            part = make_mimetext(self.readme_msg, params, members,
-                                 name='Readme.txt')
-            if part:
-                message.attach(part)
+        # Attach readme and send the post
+        self.send_message(ml_name, message, mailfrom, members, params,
+                          self.readme_msg, 'Readme.txt')
 
-        # Send a post to the members of the ML
-        self.send_post(ml_name, message, mailfrom)
+    def send_message(self, ml_name, message, mailfrom, members, params,
+                     template, filename, charset="utf-8"):
+        try:
+            content = ""
+            if template:
+                content = template % params
+                content = content.replace("\r\n", "\n").replace("\n", "\r\n")
+            content += "\r\n".join(list(members))
+            part = MIMEText(content, _charset=charset)
+            part.set_param('name', filename)
+            message.attach(part)
+        finally:
+            members = db.get_members(ml_name)
+            self.send_post(ml_name, message, mailfrom, members=members)
 
     def send_post(self, ml_name, message, mailfrom, members=None):
         """
@@ -342,6 +361,12 @@ def main():
     parser.add_argument('--goodbye-file',
                         help='Message file for removing member',
                         default=GOODBYE_FILE)
+    parser.add_argument('--closed-file',
+                        help='Message file for closing ML',
+                        default=CLOSED_FILE)
+    parser.add_argument('--reopen-file',
+                        help='Message file for reopening ML',
+                        default=REOPEN_FILE)
 
     opts = parser.parse_args()
 
