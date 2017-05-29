@@ -30,6 +30,13 @@ OP_CREATE = "create"
 OP_UPDATE = "update"
 OP_ADD_MEMBERS = "adde_members"
 OP_DEL_MEMBERS = "delete_members"
+OP_REOPEN = "reopen"
 OP_ORPHAN = "orphan"
 OP_CLOSE = "close"
 OP_POST = "post"
+
+OP_MAP = {
+    STATUS_OPEN: OP_REOPEN,
+    STATUS_ORPHANED: OP_ORPHAN,
+    STATUS_CLOSED: OP_CLOSE,
+}

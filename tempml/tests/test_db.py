@@ -153,3 +153,23 @@ class DbTest(unittest.TestCase):
             },
         ]
         self.assertEqual(db.get_logs(ml_name), logs)
+
+    def test_change_ml_status(self):
+        ml_name = ML_NAME % db.increase_counter()
+        db.create_ml(ml_name, set(), "xyz")
+        self.assertEqual(db.get_members(ml_name), set())
+
+        db.change_ml_status(ml_name, const.STATUS_ORPHANED, "xxx")
+        ml = db.get_ml(ml_name)
+        self.assertEqual(ml['status'], const.STATUS_ORPHANED)
+        self.assertEqual(ml['logs'][-1]['op'], const.OP_ORPHAN)
+
+        db.change_ml_status(ml_name, const.STATUS_CLOSED, "xxx")
+        ml = db.get_ml(ml_name)
+        self.assertEqual(ml['status'], const.STATUS_CLOSED)
+        self.assertEqual(ml['logs'][-1]['op'], const.OP_CLOSE)
+
+        db.change_ml_status(ml_name, const.STATUS_OPEN, "xxx")
+        ml = db.get_ml(ml_name)
+        self.assertEqual(ml['status'], const.STATUS_OPEN)
+        self.assertEqual(ml['logs'][-1]['op'], const.OP_REOPEN)

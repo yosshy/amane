@@ -172,6 +172,31 @@ def mark_mls_closed(last_updated, by):
     return result
 
 
+def change_ml_status(ml_name, status, by):
+    """
+    Alter status of a ML. This is an atomic operation.
+
+    :param ml_name: mailing list ID
+    :type ml_name: str
+    :param status: status; 'orphaned', 'open' or 'closed'
+    :type status: str
+    :param by: sender's e-mail address
+    :type by: str
+    :rtype: None
+    """
+    log_dict = {
+        "op": const.OP_MAP[status],
+        "by": by,
+    }
+    DB.ml.update_many({'ml_name': ml_name},
+                      {'$set': {'status': status,
+                                'updated': datetime.now(),
+                                'by': by},
+                       '$push': {'logs': log_dict}})
+    logging.debug("status changed: ml_name=%s|status=%s|by=%s",
+                  ml_name, status, by)
+
+
 def add_members(ml_name, members, by):
     """
     Add e-mail addresses of new members into a ML
