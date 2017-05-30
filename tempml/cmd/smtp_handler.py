@@ -90,9 +90,9 @@ class TempMlSMTPServer(smtpd.SMTPServer):
         self.relay_port = relay_port
         self.ml_name_format = ml_name_format
         self.new_ml_account = new_ml_account
-        self.domain = domain
+        self.at_domain = "@" + domain
         self.debug = debug
-        self.new_ml_address = new_ml_account + "@" + domain
+        self.new_ml_address = new_ml_account + self.at_domain
         self.admins = set()
         if admin_file:
             with open(admin_file) as f:
@@ -151,7 +151,7 @@ class TempMlSMTPServer(smtpd.SMTPServer):
         mailfrom = list(_from)[0]
 
         # Check cross-post
-        mls = [_ for _ in (to | cc) if _.endswith("@" + self.domain)]
+        mls = [_ for _ in (to | cc) if _.endswith(self.at_domain)]
         if len(mls) == 0:
             logging.error("No ML specified")
             return const.SMTP_STATUS_NO_ML_SPECIFIED
@@ -161,7 +161,7 @@ class TempMlSMTPServer(smtpd.SMTPServer):
 
         # Aquire the ML name
         ml_address = mls[0]
-        ml_name = ml_address.replace("@" + self.domain, "")
+        ml_name = ml_address.replace(self.at_domain, "")
         params = dict(ml_name=ml_name, ml_address=ml_address,
                       mailfrom=mailfrom)
 
@@ -285,8 +285,8 @@ class TempMlSMTPServer(smtpd.SMTPServer):
         """
 
         # Format the post
-        _to = ml_name + "@" + self.domain
-        _from = ml_name + ERROR_SUFFIX + "@" + self.domain
+        _to = ml_name + self.at_domain
+        _from = ml_name + ERROR_SUFFIX + self.at_domain
         del(message['To'])
         del(message['Reply-To'])
         del(message['Return-Path'])
