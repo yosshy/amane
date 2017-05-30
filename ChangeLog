@@ -1,6 +1,8 @@
 CHANGES
 =======
 
+* smtp\_handler: improved subject: handling
+* smtp\_handler: removed send\_post() on creating a ML
 * smtp\_handler: make members  of send\_post() a param
 * smtp\_handler: added status handling
 * smtp\_handler: PEP8
