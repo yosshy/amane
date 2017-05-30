@@ -1,6 +1,10 @@
 CHANGES
 =======
 
+* smtp\_handler: fixed a param bug on creating a ML
+* smtp\_handler: replaced self.domain with self.at\_domain
+* db: added subject param to create\_ml()
+* ChangeLog: updated
 * smtp\_handler: improved subject: handling
 * smtp\_handler: removed send\_post() on creating a ML
 * smtp\_handler: make members  of send\_post() a param
