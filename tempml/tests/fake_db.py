@@ -60,13 +60,15 @@ def increase_counter():
     return COUNTER
 
 
-def create_ml(ml_name, members, by):
+def create_ml(ml_name, subject, members, by):
     """
     Create a new ML and register members into it
     This is an atomic operation.
 
     :param ml_name: ML ID
     :type ml_name: str
+    :param subject: subject of the original mail
+    :type subject: str
     :param members: e-mail addresses to register
     :type members: set(str)
     :param by: sender's e-mail address
@@ -82,6 +84,7 @@ def create_ml(ml_name, members, by):
     }
     ml_dict = {
         "ml_name": ml_name,
+        "subject": subject,
         "members": members,
         "created": datetime.now(),
         "updated": datetime.now(),

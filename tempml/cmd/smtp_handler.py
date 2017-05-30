@@ -185,7 +185,7 @@ class TempMlSMTPServer(smtpd.SMTPServer):
         if ml_name == self.new_ml_account:
             ml_name = self.ml_name_format % db.increase_counter()
             members = (to | cc | _from) - self.admins
-            db.create_ml(ml_name, members, mailfrom)
+            db.create_ml(ml_name, subject, members, mailfrom)
 
             params = dict(ml_name=ml_name, ml_address=ml_address,
                           mailfrom=mailfrom)

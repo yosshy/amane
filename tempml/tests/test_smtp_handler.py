@@ -137,6 +137,8 @@ class ProcessMessageTest(unittest.TestCase):
                 msg)
             self.assertEqual(self.ml_name_arg, 'ml-000001')
             self.assertEqual(fake_db.get_members('ml-000001'), final_members)
+            ml = fake_db.get_ml('ml-000001')
+            self.assertEqual(ml['subject'], 'Test message')
 
     def test_create_ml_w_2_tos(self):
         msg = 'From: Test1 <test1@example.com>\n' \
@@ -218,7 +220,8 @@ class ProcessMessageTest(unittest.TestCase):
     def test_send_a_post_from_non_member(self):
         ml_name = 'ml-000010'
         initial_members = {"test1@example.com"}
-        fake_db.create_ml(ml_name, initial_members, "test1@example.com")
+        fake_db.create_ml(ml_name, "hoge", initial_members,
+                          "test1@example.com")
 
         msg = 'From: Test2 <test2@example.com>\n' \
               'To: ml-000010 <ml-000010@testml.net>\n' \
@@ -237,7 +240,8 @@ class ProcessMessageTest(unittest.TestCase):
 
     def test_send_a_post_w_2_tos(self):
         initial_members = {"test1@example.com"}
-        fake_db.create_ml('ml-000010', initial_members, "test1@example.com")
+        fake_db.create_ml('ml-000010', "hoge", initial_members,
+                          "test1@example.com")
         msg = 'From: Test1 <test1@example.com>\n' \
               'To: ml-000010 <ml-000010@testml.net>, ' \
               'Test2 <test2@example.com>\n' \
@@ -258,7 +262,8 @@ class ProcessMessageTest(unittest.TestCase):
 
     def test_add_members_w_1_cc(self):
         initial_members = {"test1@example.com"}
-        fake_db.create_ml('ml-000010', initial_members, "test1@example.com")
+        fake_db.create_ml('ml-000010', "hoge", initial_members,
+                          "test1@example.com")
         msg = 'From: Test1 <test1@example.com>\n' \
               'To: ml-000010 <ml-000010@testml.net>\n' \
               'Cc: Test3 <test3@example.com>\n' \
@@ -279,7 +284,8 @@ class ProcessMessageTest(unittest.TestCase):
 
     def test_add_members_w_2_ccs(self):
         initial_members = {"test1@example.com"}
-        fake_db.create_ml('ml-000010', initial_members, "test1@example.com")
+        fake_db.create_ml('ml-000010', "hoge", initial_members,
+                          "test1@example.com")
         msg = 'From: Test1 <test1@example.com>\n' \
               'To: ml-000010 <ml-000010@testml.net>\n' \
               'Cc: Test3 <test3@example.com>, Test4 <test4@example.com>\n' \
@@ -301,7 +307,8 @@ class ProcessMessageTest(unittest.TestCase):
 
     def test_add_members_w_2_tos_and_2_ccs(self):
         initial_members = {"test1@example.com"}
-        fake_db.create_ml('ml-000010', initial_members, "test1@example.com")
+        fake_db.create_ml('ml-000010', "hoge", initial_members,
+                          "test1@example.com")
         msg = 'From: Test1 <test1@example.com>\n' \
               'To: ml-000010 <ml-000010@testml.net>, ' \
               'Test2 <test2@example.com>\n' \
@@ -324,7 +331,8 @@ class ProcessMessageTest(unittest.TestCase):
 
     def test_del_members_w_2_tos(self):
         initial_members = {"test1@example.com", "test2@example.com"}
-        fake_db.create_ml('ml-000010', initial_members, "test1@example.com")
+        fake_db.create_ml('ml-000010', "hoge", initial_members,
+                          "test1@example.com")
         msg = 'From: Test1 <test1@example.com>\n' \
               'To: ml-000010 <ml-000010@testml.net>, ' \
               'Test2 <test2@example.com>\n' \
@@ -345,7 +353,8 @@ class ProcessMessageTest(unittest.TestCase):
 
     def test_del_members_w_1_cc(self):
         initial_members = {"test1@example.com", "test3@example.com"}
-        fake_db.create_ml('ml-000010', initial_members, "test1@example.com")
+        fake_db.create_ml('ml-000010', "hoge", initial_members,
+                          "test1@example.com")
         msg = 'From: Test1 <test1@example.com>\n' \
               'To: ml-000010 <ml-000010@testml.net>\n' \
               'Cc: Test3 <test3@example.com>\n' \
@@ -367,7 +376,8 @@ class ProcessMessageTest(unittest.TestCase):
     def test_del_members_w_2_ccs(self):
         initial_members = {"test1@example.com", "test3@example.com",
                            "test4@example.com"}
-        fake_db.create_ml('ml-000010', initial_members, "test1@example.com")
+        fake_db.create_ml('ml-000010', "hoge", initial_members,
+                          "test1@example.com")
         msg = 'From: Test1 <test1@example.com>\n' \
               'To: ml-000010 <ml-000010@testml.net>\n' \
               'Cc: Test3 <test3@example.com>, Test4 <test4@example.com>\n' \
@@ -389,7 +399,8 @@ class ProcessMessageTest(unittest.TestCase):
     def test_del_members_w_2_tos_and_2_ccs(self):
         initial_members = {"test1@example.com", "test2@example.com",
                            "test3@example.com", "test4@example.com"}
-        fake_db.create_ml('ml-000010', initial_members, "test1@example.com")
+        fake_db.create_ml('ml-000010', "hoge", initial_members,
+                          "test1@example.com")
         msg = 'From: Test1 <test1@example.com>\n' \
               'To: ml-000010 <ml-000010@testml.net>, ' \
               'Test2 <test2@example.com>\n' \
@@ -412,7 +423,8 @@ class ProcessMessageTest(unittest.TestCase):
     def test_error_return(self):
         initial_members = {"test1@example.com", "test2@example.com",
                            "test3@example.com", "test4@example.com"}
-        fake_db.create_ml('ml-000010', initial_members, "test1@example.com")
+        fake_db.create_ml('ml-000010', "hoge", initial_members,
+                          "test1@example.com")
         msg = 'From: MAILER-DAEMON <daemon@example.com>\n' \
               'To: ml-000010-error <ml-000010-error@testml.net>\n' \
               'Original-Recipient: rfc822;test2@example.com\n' \
@@ -435,7 +447,8 @@ class ProcessMessageTest(unittest.TestCase):
     def test_close_ml(self):
         initial_members = {"test1@example.com", "test2@example.com",
                            "test3@example.com", "test4@example.com"}
-        fake_db.create_ml('ml-000010', initial_members, "test1@example.com")
+        fake_db.create_ml('ml-000010', "hoge", initial_members,
+                          "test1@example.com")
         msg = 'From: Test1 <test1@example.com>\n' \
               'To: ml-000010 <ml-000010@testml.net>, ' \
               'Test2 <test2@example.com>\n' \
@@ -460,7 +473,8 @@ class ProcessMessageTest(unittest.TestCase):
     def test_post_closed_ml(self):
         initial_members = {"test1@example.com", "test2@example.com",
                            "test3@example.com", "test4@example.com"}
-        fake_db.create_ml('ml-000010', initial_members, "test1@example.com")
+        fake_db.create_ml('ml-000010', "hoge", initial_members,
+                          "test1@example.com")
         fake_db.change_ml_status('ml-000010', const.STATUS_CLOSED,
                                  "test2@example.com")
         msg = 'From: Test1 <test1@example.com>\n' \
@@ -484,7 +498,8 @@ class ProcessMessageTest(unittest.TestCase):
     def test_close_closed_ml(self):
         initial_members = {"test1@example.com", "test2@example.com",
                            "test3@example.com", "test4@example.com"}
-        fake_db.create_ml('ml-000010', initial_members, "test1@example.com")
+        fake_db.create_ml('ml-000010', "hoge", initial_members,
+                          "test1@example.com")
         fake_db.change_ml_status('ml-000010', const.STATUS_CLOSED,
                                  "test2@example.com")
         msg = 'From: Test1 <test1@example.com>\n' \
@@ -508,7 +523,8 @@ class ProcessMessageTest(unittest.TestCase):
     def test_reopen_closed_ml(self):
         initial_members = {"test1@example.com", "test2@example.com",
                            "test3@example.com", "test4@example.com"}
-        fake_db.create_ml('ml-000010', initial_members, "test1@example.com")
+        fake_db.create_ml('ml-000010', "hoge", initial_members,
+                          "test1@example.com")
         fake_db.change_ml_status('ml-000010', const.STATUS_CLOSED,
                                  "test2@example.com")
         msg = 'From: Test1 <test1@example.com>\n' \
@@ -535,7 +551,8 @@ class ProcessMessageTest(unittest.TestCase):
     def test_reopen_orphaned_ml(self):
         initial_members = {"test1@example.com", "test2@example.com",
                            "test3@example.com", "test4@example.com"}
-        fake_db.create_ml('ml-000010', initial_members, "test1@example.com")
+        fake_db.create_ml('ml-000010', "hoge", initial_members,
+                          "test1@example.com")
         fake_db.change_ml_status('ml-000010', const.STATUS_ORPHANED,
                                  "test2@example.com")
         msg = 'From: Test1 <test1@example.com>\n' \
@@ -562,7 +579,8 @@ class ProcessMessageTest(unittest.TestCase):
     def test_reopen_open_ml(self):
         initial_members = {"test1@example.com", "test2@example.com",
                            "test3@example.com", "test4@example.com"}
-        fake_db.create_ml('ml-000010', initial_members, "test1@example.com")
+        fake_db.create_ml('ml-000010', "hoge", initial_members,
+                          "test1@example.com")
         msg = 'From: Test1 <test1@example.com>\n' \
               'To: ml-000010 <ml-000010@testml.net>, ' \
               'Test2 <test2@example.com>\n' \
@@ -729,7 +747,8 @@ class ProcessMessageWithAdminsTest(unittest.TestCase):
     def test_send_a_post_by_admin(self):
         ml_name = 'ml-000010'
         initial_members = {"test1@example.com"}
-        fake_db.create_ml(ml_name, initial_members, "test1@example.com")
+        fake_db.create_ml(ml_name, "hoge", initial_members,
+                          "test1@example.com")
         final_members = {"test1@example.com"}
 
         msg = 'From: Test2 <test2@example.com>\n' \
@@ -750,7 +769,8 @@ class ProcessMessageWithAdminsTest(unittest.TestCase):
 
     def test_add_members_w_2_tos_i_admin(self):
         initial_members = {"test1@example.com"}
-        fake_db.create_ml('ml-000010', initial_members, "test1@example.com")
+        fake_db.create_ml('ml-000010', "hoge", initial_members,
+                          "test1@example.com")
         msg = 'From: Test1 <test1@example.com>\n' \
               'To: ml-000010 <ml-000010@testml.net>, ' \
               'Test2 <test2@example.com>\n' \
@@ -771,7 +791,8 @@ class ProcessMessageWithAdminsTest(unittest.TestCase):
 
     def test_add_members_w_1_cc_i_admin(self):
         initial_members = {"test1@example.com"}
-        fake_db.create_ml('ml-000010', initial_members, "test1@example.com")
+        fake_db.create_ml('ml-000010', "hoge", initial_members,
+                          "test1@example.com")
         msg = 'From: Test1 <test1@example.com>\n' \
               'To: ml-000010 <ml-000010@testml.net>\n' \
               'Cc: Test4 <test4@example.com>\n' \
@@ -792,7 +813,8 @@ class ProcessMessageWithAdminsTest(unittest.TestCase):
 
     def test_add_members_w_2_ccs_i_admin(self):
         initial_members = {"test1@example.com"}
-        fake_db.create_ml('ml-000010', initial_members, "test1@example.com")
+        fake_db.create_ml('ml-000010', "hoge", initial_members,
+                          "test1@example.com")
         msg = 'From: Test1 <test1@example.com>\n' \
               'To: ml-000010 <ml-000010@testml.net>\n' \
               'Cc: Test3 <test3@example.com>, Test4 <test4@example.com>\n' \
@@ -813,7 +835,8 @@ class ProcessMessageWithAdminsTest(unittest.TestCase):
 
     def test_add_members_w_2_tos_and_2_ccs_i_admins(self):
         initial_members = {"test1@example.com"}
-        fake_db.create_ml('ml-000010', initial_members, "test1@example.com")
+        fake_db.create_ml('ml-000010', "hoge", initial_members,
+                          "test1@example.com")
         msg = 'From: Test1 <test1@example.com>\n' \
               'To: ml-000010 <ml-000010@testml.net>, ' \
               'Test2 <test2@example.com>\n' \
@@ -835,7 +858,8 @@ class ProcessMessageWithAdminsTest(unittest.TestCase):
 
     def test_del_members_w_2_tos_i_admin(self):
         initial_members = {"test1@example.com"}
-        fake_db.create_ml('ml-000010', initial_members, "test1@example.com")
+        fake_db.create_ml('ml-000010', "hoge", initial_members,
+                          "test1@example.com")
         msg = 'From: Test1 <test1@example.com>\n' \
               'To: ml-000010 <ml-000010@testml.net>, ' \
               'Test2 <test2@example.com>\n' \
@@ -856,7 +880,8 @@ class ProcessMessageWithAdminsTest(unittest.TestCase):
 
     def test_del_members_w_1_cc_by_admin(self):
         initial_members = {"test1@example.com", "test3@example.com"}
-        fake_db.create_ml('ml-000010', initial_members, "test1@example.com")
+        fake_db.create_ml('ml-000010', "hoge", initial_members,
+                          "test1@example.com")
         msg = 'From: Test2 <test2@example.com>\n' \
               'To: ml-000010 <ml-000010@testml.net>\n' \
               'Cc: Test3 <test3@example.com>\n' \
@@ -877,7 +902,8 @@ class ProcessMessageWithAdminsTest(unittest.TestCase):
 
     def test_del_members_w_2_ccs_i_admin(self):
         initial_members = {"test1@example.com", "test3@example.com"}
-        fake_db.create_ml('ml-000010', initial_members, "test1@example.com")
+        fake_db.create_ml('ml-000010', "hoge", initial_members,
+                          "test1@example.com")
         msg = 'From: Test1 <test1@example.com>\n' \
               'To: ml-000010 <ml-000010@testml.net>\n' \
               'Cc: Test3 <test3@example.com>, Test4 <test4@example.com>\n' \
@@ -898,7 +924,8 @@ class ProcessMessageWithAdminsTest(unittest.TestCase):
 
     def test_del_members_w_2_tos_and_2_ccs_i_admin(self):
         initial_members = {"test1@example.com", "test3@example.com"}
-        fake_db.create_ml('ml-000010', initial_members, "test1@example.com")
+        fake_db.create_ml('ml-000010', "hoge", initial_members,
+                          "test1@example.com")
         msg = 'From: Test1 <test1@example.com>\n' \
               'To: ml-000010 <ml-000010@testml.net>, ' \
               'Test2 <test2@example.com>\n' \
@@ -953,7 +980,7 @@ class SendPostTest(unittest.TestCase):
     def test_no_cc(self):
         members = {"test1@example.com", "test2@example.com",
                    "test3@example.com", "test4@example.com"}
-        fake_db.create_ml('ml-000010', members, "test1@example.com")
+        fake_db.create_ml('ml-000010', "hoge", members, "test1@example.com")
         msg = 'From: Test1 <test1@example.com>\n' \
               'To: ml-000010 <ml-000010@testml.net>\n' \
               'Subject: test\n' \
@@ -984,7 +1011,7 @@ class SendPostTest(unittest.TestCase):
     def test_2_ccs(self):
         members = {"test1@example.com", "test2@example.com",
                    "test3@example.com", "test4@example.com"}
-        fake_db.create_ml('ml-000010', members, "test1@example.com")
+        fake_db.create_ml('ml-000010', "hoge", members, "test1@example.com")
         msg = 'From: Test1 <test1@example.com>\n' \
               'To: ml-000010 <ml-000010@testml.net>\n' \
               'Cc: Test3 <test3@example.com>, Test4 <test4@example.com>\n' \
@@ -1018,7 +1045,7 @@ class SendPostTest(unittest.TestCase):
     def test_members(self):
         members = {"test1@example.com", "test2@example.com",
                    "test3@example.com", "test4@example.com"}
-        fake_db.create_ml('ml-000010', members, "test1@example.com")
+        fake_db.create_ml('ml-000010', "hoge", members, "test1@example.com")
         msg = 'From: Test1 <test1@example.com>\n' \
               'To: ml-000010 <ml-000010@testml.net>\n' \
               'Cc: Test3 <test3@example.com>, Test4 <test4@example.com>\n' \
