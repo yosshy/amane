@@ -21,6 +21,7 @@ STATUS_OPEN = "open"
 STATUS_ORPHANED = "orphaned"
 STATUS_CLOSED = "closed"
 
+SMTP_STATUS_CLOSED_ML = "550 ML is closed"
 SMTP_STATUS_NO_SUCH_ML = "550 No such ML"
 SMTP_STATUS_NOT_MEMBER = "550 Not member"
 SMTP_STATUS_NO_ML_SPECIFIED = "550 No ML specified"
@@ -30,6 +31,13 @@ OP_CREATE = "create"
 OP_UPDATE = "update"
 OP_ADD_MEMBERS = "adde_members"
 OP_DEL_MEMBERS = "delete_members"
+OP_REOPEN = "reopen"
 OP_ORPHAN = "orphan"
 OP_CLOSE = "close"
 OP_POST = "post"
+
+OP_MAP = {
+    STATUS_OPEN: OP_REOPEN,
+    STATUS_ORPHANED: OP_ORPHAN,
+    STATUS_CLOSED: OP_CLOSE,
+}

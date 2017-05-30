@@ -67,13 +67,15 @@ def increase_counter():
     return counter['seq']
 
 
-def create_ml(ml_name, members, by):
+def create_ml(ml_name, subject, members, by):
     """
     Create a new ML and register members into it
     This is an atomic operation.
 
     :param ml_name: ML ID
     :type ml_name: str
+    :param subject: subject of the original mail
+    :type subject: str
     :param members: e-mail addresses to register
     :type members: set(str)
     :param by: sender's e-mail address
@@ -93,6 +95,7 @@ def create_ml(ml_name, members, by):
     }
     ml_dict = {
         "ml_name": ml_name,
+        "subject": subject,
         "members": list(members),
         "created": datetime.now(),
         "updated": datetime.now(),
@@ -170,6 +173,31 @@ def mark_mls_closed(last_updated, by):
     result = DB.ml.find({'status': const.STATUS_CLOSED})
     logging.debug("closed: %s", [_['ml_name'] for _ in result])
     return result
+
+
+def change_ml_status(ml_name, status, by):
+    """
+    Alter status of a ML. This is an atomic operation.
+
+    :param ml_name: mailing list ID
+    :type ml_name: str
+    :param status: status; 'orphaned', 'open' or 'closed'
+    :type status: str
+    :param by: sender's e-mail address
+    :type by: str
+    :rtype: None
+    """
+    log_dict = {
+        "op": const.OP_MAP[status],
+        "by": by,
+    }
+    DB.ml.update_many({'ml_name': ml_name},
+                      {'$set': {'status': status,
+                                'updated': datetime.now(),
+                                'by': by},
+                       '$push': {'logs': log_dict}})
+    logging.debug("status changed: ml_name=%s|status=%s|by=%s",
+                  ml_name, status, by)
 
 
 def add_members(ml_name, members, by):
