@@ -22,6 +22,7 @@ import asyncore
 import email
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
+from email.header import Header, decode_header, make_header
 import email_normalize
 import logging
 import os
@@ -134,6 +135,10 @@ class TempMlSMTPServer(smtpd.SMTPServer):
         to_str = message.get('To', "").strip()
         cc_str = message.get('Cc', "").strip()
         subject = message.get('Subject', "").strip()
+        try:
+            subject = str(make_header(decode_header(subject)))
+        except:
+            pass
         command = subject.strip().lower()
         logging.info("Processing: from=%s|to=%s|cc=%s|subject=%s|",
                      from_str, to_str, cc_str, subject)
@@ -231,7 +236,7 @@ class TempMlSMTPServer(smtpd.SMTPServer):
                       mailfrom=mailfrom, cc="\r\n".join(list(cc)))
 
         # Remove cc'd members from the ML members if the subject is empty
-        if subject == "":
+        if command == "":
             if len(cc) > 0:
                 self.send_message(ml_name, message, mailfrom, members - cc,
                                   params, self.goodbye_msg, 'Goodbye.txt')
@@ -289,9 +294,13 @@ class TempMlSMTPServer(smtpd.SMTPServer):
         message.add_header('Reply-To', _to)
         message.add_header('Return-Path', _from)
         subject = message.get('Subject', '')
-        subject = re.sub(r"^(re:|\[%s\]|\s)*" % ml_name, "", subject,
-                         flags=re.I)
-        message.replace_header('Subject', "[%s] %s" % (ml_name, subject))
+        try:
+            subject = str(make_header(decode_header(subject)))
+        except:
+            pass
+        subject = re.sub(r"^(re:|\[%s\]|\s)*" % ml_name, "[%s] " % ml_name,
+                         subject, flags=re.I)
+        message.replace_header('Subject', Header(subject, 'iso-2022-jp'))
 
         # Send a post to the relay host
         relay = smtplib.SMTP(self.relay_host, self.relay_port)

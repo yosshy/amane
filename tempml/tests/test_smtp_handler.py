@@ -977,7 +977,8 @@ class SendPostTest(unittest.TestCase):
             self.assertEqual(message['to'], 'ml-000010@testml.net')
             self.assertEqual(message['reply-to'], 'ml-000010@testml.net')
             self.assertEqual(message.get('cc', ''), '')
-            self.assertEqual(message['subject'], '[ml-000010] test')
+            self.assertEqual(message['subject'],
+                             '=?iso-2022-jp?b?W21sLTAwMDAxMF0gdGVzdA==?=')
 
     @mock.patch('tempml.cmd.smtp_handler.smtplib.SMTP', DummySMTPClient)
     def test_2_ccs(self):
@@ -1010,7 +1011,8 @@ class SendPostTest(unittest.TestCase):
             self.assertEqual(
                 message['cc'],
                 'Test3 <test3@example.com>, Test4 <test4@example.com>')
-            self.assertEqual(message['subject'], '[ml-000010] test')
+            self.assertEqual(message['subject'],
+                             '=?iso-2022-jp?b?W21sLTAwMDAxMF0gdGVzdA==?=')
 
     @mock.patch('tempml.cmd.smtp_handler.smtplib.SMTP', DummySMTPClient)
     def test_members(self):
@@ -1043,4 +1045,5 @@ class SendPostTest(unittest.TestCase):
             self.assertEqual(
                 message['cc'],
                 'Test3 <test3@example.com>, Test4 <test4@example.com>')
-            self.assertEqual(message['subject'], '[ml-000010] test')
+            self.assertEqual(message['subject'],
+                             '=?iso-2022-jp?b?W21sLTAwMDAxMF0gdGVzdA==?=')
