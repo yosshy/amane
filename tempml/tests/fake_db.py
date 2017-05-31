@@ -17,6 +17,7 @@
 Database handler
 """
 
+import copy
 from datetime import datetime
 import logging
 import time
@@ -108,6 +109,31 @@ def get_ml(ml_name):
     """
     logging.debug("fake_db: get_ml")
     return MLS[ml_name]
+
+
+def find_mls(cond, sortkey=None, reverse=False):
+    """
+    Aquire MLs with conditions
+    This is an atomic operation.
+
+    :keyword cond: Conditions
+    :type cond: dict
+    :keyword sortkey: sort pattern
+    :type sortkey: str
+    :keyword reverse: Reverse sort or not
+    :type reverse: bool
+    :return: ML objects
+    :rtype: [dict]
+    """
+    result = copy.copy(MLS)
+    for key, value in cond.items():
+        result = [_ for _ in result if _[key] == value]
+    if sortkey:
+        if reverse:
+            result.sort(sortkey, reverse=True)
+        else:
+            result.sort(sortkey)
+    return result
 
 
 def mark_mls_orphaned(last_updated, by):

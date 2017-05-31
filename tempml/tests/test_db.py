@@ -174,3 +174,17 @@ class DbTest(unittest.TestCase):
         ml = db.get_ml(ml_name)
         self.assertEqual(ml['status'], const.STATUS_OPEN)
         self.assertEqual(ml['logs'][-1]['op'], const.OP_REOPEN)
+
+    def test_find_mls(self):
+        db.create_ml("a", "hoge1", set(), "xyz")
+        time.sleep(1)
+        db.create_ml("b", "hoge2", set(), "xyz")
+        time.sleep(1)
+        db.create_ml("c", "hoge1", set(), "xyz")
+
+        ret = db.find_mls({"subject": "hoge1"})
+        self.assertEqual(len(list(ret)), 2)
+        ret = db.find_mls({"subject": "hoge1"}, sortkey='created')
+        self.assertEqual([_['ml_name'] for _ in ret], ["a", "c"])
+        ret = db.find_mls({}, sortkey='created', reverse=True)
+        self.assertEqual([_['ml_name'] for _ in ret], ["c", "b", "a"])
