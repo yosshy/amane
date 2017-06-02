@@ -12,7 +12,7 @@ from QuickML (https://github.com/masui/QuickML) but it's not the same.
 ## How to run
 
 ```
-# tempml_smtp_handler \
+# tempml_smtpd \
 	--new-ml-account new \
 	--db-url mongodb://localhost/ --db-name tempml \
 	--listen-address 192.168.0.100 --listen-port 25 \
