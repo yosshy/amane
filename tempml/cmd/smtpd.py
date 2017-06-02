@@ -298,12 +298,12 @@ def main():
         print(pbr.version.VersionInfo('tempml'))
         return 0
 
-    log.setup(debug=opts.debug)
-    logging.debug("args: %s", opts.__dict__)
-
     config = yaml.load(opts.config_file)
     for key, value in config.items():
         setattr(opts, key, value)
+
+    log.setup(filename=opts.log_file, debug=opts.debug)
+    logging.debug("args: %s", opts.__dict__)
 
     server = TempMlSMTPServer(**opts.__dict__)
     asyncore.loop()
