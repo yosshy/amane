@@ -1,6 +1,8 @@
 CHANGES
 =======
 
+* README: updated
+* ChangeLog: updated
 * smtpd: modified the header docstring
 * smtpd: replace \*\_files options with \*\_msg
 * smtpd: use YAML for config
