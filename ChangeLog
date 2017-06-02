@@ -1,6 +1,13 @@
 CHANGES
 =======
 
+* smtpd: fixed log-file handling
+* merge
+
+0.5
+---
+
+* ChangeLog: updated
 * README: updated
 * ChangeLog: updated
 * smtpd: modified the header docstring
@@ -10,6 +17,7 @@ CHANGES
 * ChangeLog: updated
 * ChangeLog: updated
 * reporter: created
+* db: added find\_mls()
 * db: added find\_mls()
 
 0.4
