@@ -17,6 +17,7 @@
 Database handler
 """
 
+import copy
 from datetime import datetime
 import logging
 import time
@@ -92,6 +93,7 @@ def create_ml(ml_name, subject, members, by):
         "by": by,
         "logs": [log_dict],
     }
+    global MLS
     MLS[ml_name] = ml_dict
     logging.debug("after: %s", ml_dict)
 
@@ -108,6 +110,42 @@ def get_ml(ml_name):
     """
     logging.debug("fake_db: get_ml")
     return MLS[ml_name]
+
+
+def find_mls(cond, sortkey=None, reverse=False):
+    """
+    Aquire MLs with conditions
+    This is an atomic operation.
+
+    :keyword cond: Conditions
+    :type cond: dict
+    :keyword sortkey: sort pattern
+    :type sortkey: str
+    :keyword reverse: Reverse sort or not
+    :type reverse: bool
+    :return: ML objects
+    :rtype: [dict]
+    """
+    result = MLS.values()
+    for key, value in cond.items():
+        if isinstance(value, dict):
+            for k, v in value.items():
+                if k == '$gt':
+                    result = [_ for _ in result if _[key] > v]
+                elif k == '$ge':
+                    result = [_ for _ in result if _[key] >= v]
+                elif k == '$lt':
+                    result = [_ for _ in result if _[key] < v]
+                elif k == '$le':
+                    result = [_ for _ in result if _[key] <= v]
+                elif k == '$ne':
+                    result = [_ for _ in result if _[key] != v]
+        else:
+            result = [_ for _ in result if _[key] == value]
+        print("RESULT: %s" % result)
+    if sortkey:
+        result.sort(key=lambda _: _[sortkey], reverse=reverse)
+    return result
 
 
 def mark_mls_orphaned(last_updated, by):
@@ -127,6 +165,7 @@ def mark_mls_orphaned(last_updated, by):
         "op": const.OP_ORPHAN,
         "by": by,
     }
+    global MLS
     for ml_name, data in MLS.items():
         if data['status'] == const.STATUS_OPEN and \
                 data['updated'] < last_updated:
@@ -153,6 +192,7 @@ def mark_mls_closed(last_updated, by):
         "op": const.OP_CLOSE,
         "by": by,
     }
+    global MLS
     for ml_name, data in MLS.items():
         if data['status'] == const.STATUS_ORPHANED and \
                 data['updated'] < last_updated:
@@ -175,6 +215,7 @@ def change_ml_status(ml_name, status, by):
     :rtype: None
     """
     logging.debug("fake_db: change_ml_status")
+    global MLS
     ml = MLS[ml_name]
     log_dict = {
         "op": const.OP_MAP[status],
@@ -201,6 +242,7 @@ def add_members(ml_name, members, by):
     :rtype: None
     """
     logging.debug("fake_db: add_members")
+    global MLS
     ml = MLS[ml_name]
     logging.debug("before: %s", ml)
     log_dict = {
@@ -229,6 +271,7 @@ def del_members(ml_name, members, by):
     :rtype: None
     """
     logging.warning("fake_db: del_members: %s", members)
+    global MLS
     ml = MLS[ml_name]
     logging.warning("before: %s", ml)
     log_dict = {
@@ -276,6 +319,7 @@ def log_post(ml_name, members, by):
         "op": const.OP_POST,
         "by": by,
     }
+    global MLS
     MLS[ml_name]['logs'].append(log_dict)
 
 

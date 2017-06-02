@@ -121,6 +121,29 @@ def get_ml(ml_name):
     return ml
 
 
+def find_mls(cond, sortkey=None, reverse=False):
+    """
+    Aquire MLs with conditions
+    This is an atomic operation.
+
+    :param cond: Conditions
+    :type cond: dict
+    :keyword sortkey: sort pattern
+    :type sortkey: str
+    :keyword reverse: Reverse sort or not
+    :type reverse: bool
+    :return: ML objects
+    :rtype: [dict]
+    """
+    if sortkey:
+        if reverse:
+            return DB.ml.find(cond, sort=[(sortkey, -1)])
+        else:
+            return DB.ml.find(cond, sort=[(sortkey, 1)])
+    else:
+        return DB.ml.find(cond)
+
+
 def mark_mls_orphaned(last_updated, by):
     """
     Mark old MLs orphaned if they are updated before last_updated
