@@ -1,8 +1,9 @@
 CHANGES
 =======
 
-* setup: added reporter
+* ChangeLog: updated
 * reporter: created
+* db: added find\_mls()
 
 0.4
 ---
