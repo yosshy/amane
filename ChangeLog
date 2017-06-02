@@ -1,6 +1,11 @@
 CHANGES
 =======
 
+* smtpd: modified the header docstring
+* smtpd: replace \*\_files options with \*\_msg
+* smtpd: use YAML for config
+* smtpd: renamed from smtp\_handler
+* ChangeLog: updated
 * ChangeLog: updated
 * reporter: created
 * db: added find\_mls()
