@@ -58,17 +58,9 @@ def normalize(addresses):
 
 class TempMlSMTPServer(smtpd.SMTPServer):
 
-    readme_msg = ""
-    welcome_msg = ""
-    goodbye_msg = ""
-    closed_msg = ""
-    reopen_msg = ""
-
     def __init__(self, listen_address=None, listen_port=None, relay_host=None,
                  relay_port=None, db_url=None, db_name=None,
                  ml_name_format=None, new_ml_account=None, domain=None,
-                 admin_file=None, readme_file=None, welcome_file=None,
-                 goodbye_file=None, closed_file=None, reopen_file=None,
                  debug=False, **kwargs):
 
         self.relay_host = relay_host
@@ -78,26 +70,12 @@ class TempMlSMTPServer(smtpd.SMTPServer):
         self.at_domain = "@" + domain
         self.debug = debug
         self.new_ml_address = new_ml_account + self.at_domain
-        self.admins = set()
-        if admin_file:
-            with open(admin_file) as f:
-                self.admins = normalize(f.readlines())
-        logging.info("admins: %s", self.admins)
-        if readme_file:
-            with open(readme_file) as f:
-                self.readme_msg = f.read()
-        if welcome_file:
-            with open(welcome_file) as f:
-                self.welcome_msg = f.read()
-        if goodbye_file:
-            with open(goodbye_file) as f:
-                self.goodbye_msg = f.read()
-        if closed_file:
-            with open(closed_file) as f:
-                self.closed_msg = f.read()
-        if reopen_file:
-            with open(reopen_file) as f:
-                self.reopen_msg = f.read()
+        self.admins = normalize(kwargs.get('admins', []))
+        self.readme_msg = kwargs.get('readme_msg', "")
+        self.welcome_msg = kwargs.get('welcome_msg', "")
+        self.goodbye_msg = kwargs.get('goodbye_msg', "")
+        self.closed_msg = kwargs.get('closed_msg', "")
+        self.reopen_msg = kwargs.get('reopen_msg', "")
 
         db.init_db(db_url, db_name)
 

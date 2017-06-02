@@ -34,7 +34,6 @@ from tempml import const
 from tempml.tests import fake_db
 
 
-DUMMY_ADMIN_FILE = join(dirname(__file__), "dummy_admin_file")
 ML_NAME = "test-%06d"
 
 
@@ -622,7 +621,8 @@ class ProcessMessageWithAdminsTest(unittest.TestCase):
             ml_name_format="ml-%06d",
             new_ml_account="new",
             domain="testml.net",
-            admin_file=DUMMY_ADMIN_FILE)
+            admins=["Test2 <test2@example.com>", "Test4 <test4@example.com>",
+                    "Test5 <test5@example.com>", "Test6 <test6@example.com>"])
 
     def tearDown(self):
         pass
