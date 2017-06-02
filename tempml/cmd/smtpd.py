@@ -31,29 +31,14 @@ import re
 import smtpd
 import smtplib
 import sys
+import yaml
 
 from tempml import const
 from tempml import db
 from tempml import log
 
 
-NEW_ML_ACCOUNT = os.environ.get("TEMPML_NEW_ML_ACCOUNT", "new")
-DB_URL = os.environ.get("TEMPML_DB_URL", "mongodb://localhost:27017/")
-DB_NAME = os.environ.get("TEMPML_DB_NAME", "tempml")
-LISTEN_ADDRESS = os.environ.get("TEMPML_LISTEN_ADDRESS", "127.0.0.1")
-LISTEN_PORT = os.environ.get("TEMPML_LISTEN_PORT", 25)
-RELAY_HOST = os.environ.get("TEMPML_RELAY_HOST", "localhost")
-RELAY_PORT = os.environ.get("TEMPML_RELAY_PORT", 1025)
-DOMAIN = os.environ.get("TEMPML_DOMAIN", "localdomain")
-ML_NAME_FORMAT = os.environ.get("TEMPML_ML_NAME_FORMAT", "ml-%06d")
-ADMIN_FILE = os.environ.get("TEMPML_ADMIN_FILE")
-LOG_FILE = os.environ.get("TEMPML_LOG_FILE")
-README_FILE = os.environ.get("TEMPML_README_FILE")
-WELCOME_FILE = os.environ.get("TEMPML_WELCOME_FILE")
-GOODBYE_FILE = os.environ.get("TEMPML_GOODBYE_FILE")
-CLOSED_FILE = os.environ.get("TEMPML_CLOSED_FILE")
-REOPEN_FILE = os.environ.get("TEMPML_REOPEN_FILE")
-
+CONFIG_FILE = os.environ.get("TEMPML_CONFIG_FILE", "/etc/tempml/smtpd.conf")
 ERROR_SUFFIX = '-error'
 REMOVE_RFC822 = re.compile("rfc822;", re.I)
 
@@ -324,54 +309,10 @@ def main():
     parser.add_argument('--debug',
                         help='Debug output',
                         action='store_true')
-    parser.add_argument('--new-ml-account',
-                        help='Account to create new ml',
-                        default=NEW_ML_ACCOUNT)
-    parser.add_argument('--db-url',
-                        help='Database URL',
-                        default=DB_URL)
-    parser.add_argument('--db-name',
-                        help='Database name',
-                        default=DB_NAME)
-    parser.add_argument('--listen-address',
-                        help='Listen address',
-                        default=LISTEN_ADDRESS)
-    parser.add_argument('--listen-port', type=int,
-                        help='Listen port',
-                        default=LISTEN_PORT)
-    parser.add_argument('--relay-host',
-                        help='SMTP server to relay',
-                        default=RELAY_HOST)
-    parser.add_argument('--relay-port', type=int,
-                        help='SMTP server port to relay',
-                        default=RELAY_PORT)
-    parser.add_argument('--domain',
-                        help='Domain name for email',
-                        default=DOMAIN)
-    parser.add_argument('--ml-name-format',
-                        help='ML name format string',
-                        default=ML_NAME_FORMAT)
-    parser.add_argument('--admin-file',
-                        help='filename within email address list',
-                        default=ADMIN_FILE)
-    parser.add_argument('--log-file',
-                        help='log file name',
-                        default=LOG_FILE)
-    parser.add_argument('--readme-file',
-                        help='ML usage file',
-                        default=README_FILE)
-    parser.add_argument('--welcome-file',
-                        help='Message file for creating ML',
-                        default=WELCOME_FILE)
-    parser.add_argument('--goodbye-file',
-                        help='Message file for removing member',
-                        default=GOODBYE_FILE)
-    parser.add_argument('--closed-file',
-                        help='Message file for closing ML',
-                        default=CLOSED_FILE)
-    parser.add_argument('--reopen-file',
-                        help='Message file for reopening ML',
-                        default=REOPEN_FILE)
+    parser.add_argument('--config-file',
+                        help='cofiguration file',
+                        type=argparse.FileType('r'),
+                        default=CONFIG_FILE)
 
     opts = parser.parse_args()
 
@@ -379,8 +320,12 @@ def main():
         print(pbr.version.VersionInfo('tempml'))
         return 0
 
-    log.setup(filename=opts.log_file, debug=opts.debug)
-    logging.info("args: %s", opts.__dict__)
+    log.setup(debug=opts.debug)
+    logging.debug("args: %s", opts.__dict__)
+
+    config = yaml.load(opts.config_file)
+    for key, value in config.items():
+        setattr(opts, key, value)
 
     server = TempMlSMTPServer(**opts.__dict__)
     asyncore.loop()
