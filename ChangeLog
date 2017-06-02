@@ -1,6 +1,13 @@
 CHANGES
 =======
 
+* setup: added reporter
+* reporter: created
+
+0.4
+---
+
+* ChangeLog: updated
 * smtp\_handler: fixed a param bug on creating a ML
 * smtp\_handler: replaced self.domain with self.at\_domain
 * db: added subject param to create\_ml()
