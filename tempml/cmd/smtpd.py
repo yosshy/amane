@@ -14,7 +14,7 @@
 #    under the License.
 
 """
-The entry point
+SMTP Handler; The Mailing List Manager
 """
 
 import argparse
