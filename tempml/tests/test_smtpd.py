@@ -14,7 +14,7 @@
 #    under the License.
 
 """
-Smoketests for SMTP handler (tempml.cmd.smtp_handler)
+Smoketests for SMTP handler (tempml.cmd.smtpd)
 """
 
 from datetime import datetime
@@ -34,7 +34,6 @@ from tempml import const
 from tempml.tests import fake_db
 
 
-DUMMY_ADMIN_FILE = join(dirname(__file__), "dummy_admin_file")
 ML_NAME = "test-%06d"
 
 
@@ -67,8 +66,8 @@ class ProcessMessageTest(unittest.TestCase):
         self.ml_name_arg = None
         self.message_arg = None
 
-        from tempml.cmd import smtp_handler
-        self.handler = smtp_handler.TempMlSMTPServer(
+        from tempml.cmd import smtpd
+        self.handler = smtpd.TempMlSMTPServer(
             listen_address="127.0.0.1",
             listen_port=25,
             relay_host="localhost",
@@ -611,8 +610,8 @@ class ProcessMessageWithAdminsTest(unittest.TestCase):
         self.ml_name_arg = None
         self.message_arg = None
 
-        from tempml.cmd import smtp_handler
-        self.handler = smtp_handler.TempMlSMTPServer(
+        from tempml.cmd import smtpd
+        self.handler = smtpd.TempMlSMTPServer(
             listen_address="127.0.0.1",
             listen_port=25,
             relay_host="localhost",
@@ -622,7 +621,8 @@ class ProcessMessageWithAdminsTest(unittest.TestCase):
             ml_name_format="ml-%06d",
             new_ml_account="new",
             domain="testml.net",
-            admin_file=DUMMY_ADMIN_FILE)
+            admins=["Test2 <test2@example.com>", "Test4 <test4@example.com>",
+                    "Test5 <test5@example.com>", "Test6 <test6@example.com>"])
 
     def tearDown(self):
         pass
@@ -956,8 +956,8 @@ class SendPostTest(unittest.TestCase):
         self.members = None
         self.message = None
 
-        from tempml.cmd import smtp_handler
-        self.handler = smtp_handler.TempMlSMTPServer(
+        from tempml.cmd import smtpd
+        self.handler = smtpd.TempMlSMTPServer(
             listen_address="127.0.0.1",
             listen_port=25,
             relay_host="localhost",
@@ -976,7 +976,7 @@ class SendPostTest(unittest.TestCase):
         self.members = members
         self.message = message
 
-    @mock.patch('tempml.cmd.smtp_handler.smtplib.SMTP', DummySMTPClient)
+    @mock.patch('tempml.cmd.smtpd.smtplib.SMTP', DummySMTPClient)
     def test_no_cc(self):
         members = {"test1@example.com", "test2@example.com",
                    "test3@example.com", "test4@example.com"}
@@ -1007,7 +1007,7 @@ class SendPostTest(unittest.TestCase):
             self.assertEqual(message['subject'],
                              '=?iso-2022-jp?b?W21sLTAwMDAxMF0gdGVzdA==?=')
 
-    @mock.patch('tempml.cmd.smtp_handler.smtplib.SMTP', DummySMTPClient)
+    @mock.patch('tempml.cmd.smtpd.smtplib.SMTP', DummySMTPClient)
     def test_2_ccs(self):
         members = {"test1@example.com", "test2@example.com",
                    "test3@example.com", "test4@example.com"}
@@ -1041,7 +1041,7 @@ class SendPostTest(unittest.TestCase):
             self.assertEqual(message['subject'],
                              '=?iso-2022-jp?b?W21sLTAwMDAxMF0gdGVzdA==?=')
 
-    @mock.patch('tempml.cmd.smtp_handler.smtplib.SMTP', DummySMTPClient)
+    @mock.patch('tempml.cmd.smtpd.smtplib.SMTP', DummySMTPClient)
     def test_members(self):
         members = {"test1@example.com", "test2@example.com",
                    "test3@example.com", "test4@example.com"}

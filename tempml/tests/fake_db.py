@@ -93,6 +93,7 @@ def create_ml(ml_name, subject, members, by):
         "by": by,
         "logs": [log_dict],
     }
+    global MLS
     MLS[ml_name] = ml_dict
     logging.debug("after: %s", ml_dict)
 
@@ -125,14 +126,25 @@ def find_mls(cond, sortkey=None, reverse=False):
     :return: ML objects
     :rtype: [dict]
     """
-    result = copy.copy(MLS)
+    result = MLS.values()
     for key, value in cond.items():
-        result = [_ for _ in result if _[key] == value]
-    if sortkey:
-        if reverse:
-            result.sort(sortkey, reverse=True)
+        if isinstance(value, dict):
+            for k, v in value.items():
+                if k == '$gt':
+                    result = [_ for _ in result if _[key] > v]
+                elif k == '$gte':
+                    result = [_ for _ in result if _[key] >= v]
+                elif k == '$lt':
+                    result = [_ for _ in result if _[key] < v]
+                elif k == '$lte':
+                    result = [_ for _ in result if _[key] <= v]
+                elif k == '$ne':
+                    result = [_ for _ in result if _[key] != v]
         else:
-            result.sort(sortkey)
+            result = [_ for _ in result if _[key] == value]
+        print("RESULT: %s" % result)
+    if sortkey:
+        result.sort(key=lambda _: _[sortkey], reverse=reverse)
     return result
 
 
@@ -153,6 +165,7 @@ def mark_mls_orphaned(last_updated, by):
         "op": const.OP_ORPHAN,
         "by": by,
     }
+    global MLS
     for ml_name, data in MLS.items():
         if data['status'] == const.STATUS_OPEN and \
                 data['updated'] < last_updated:
@@ -179,6 +192,7 @@ def mark_mls_closed(last_updated, by):
         "op": const.OP_CLOSE,
         "by": by,
     }
+    global MLS
     for ml_name, data in MLS.items():
         if data['status'] == const.STATUS_ORPHANED and \
                 data['updated'] < last_updated:
@@ -201,6 +215,7 @@ def change_ml_status(ml_name, status, by):
     :rtype: None
     """
     logging.debug("fake_db: change_ml_status")
+    global MLS
     ml = MLS[ml_name]
     log_dict = {
         "op": const.OP_MAP[status],
@@ -227,6 +242,7 @@ def add_members(ml_name, members, by):
     :rtype: None
     """
     logging.debug("fake_db: add_members")
+    global MLS
     ml = MLS[ml_name]
     logging.debug("before: %s", ml)
     log_dict = {
@@ -255,6 +271,7 @@ def del_members(ml_name, members, by):
     :rtype: None
     """
     logging.warning("fake_db: del_members: %s", members)
+    global MLS
     ml = MLS[ml_name]
     logging.warning("before: %s", ml)
     log_dict = {
@@ -302,6 +319,7 @@ def log_post(ml_name, members, by):
         "op": const.OP_POST,
         "by": by,
     }
+    global MLS
     MLS[ml_name]['logs'].append(log_dict)
 
 
