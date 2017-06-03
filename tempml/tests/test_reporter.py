@@ -19,6 +19,7 @@ Smoketests for statistics reporter (tempml.cmd.reporter)
 
 from datetime import datetime
 import email
+import logging
 from os.path import dirname, join
 import random
 import time
@@ -29,7 +30,6 @@ try:
 except:
     import mock
 import yaml
-import json
 
 import tempml
 from tempml.cmd import reporter
@@ -41,7 +41,6 @@ DUMMY_ADMIN_FILE = join(dirname(__file__), "dummy_admin_file")
 ML_NAME = "test-%06d"
 
 
-import logging
 logging.basicConfig(level=logging.DEBUG)
 
 
@@ -86,20 +85,23 @@ class ProcessMessageTest(unittest.TestCase):
         self.rcptto = rcptto
         self.message = email.message_from_string(message)
         self.body = self.message.get_payload()
-        #self.data = json.loads(self.body)
         self.data = yaml.load(self.body)
-        for key in ['open', 'orphaned', 'closed']:
+        for key in ['new', 'open', 'orphaned', 'closed']:
             if self.data[key] is None:
                 self.data[key] = []
         print(self.body)
 
-    report_body = 'open:\n%(open)s\norphaned:\n%(orphaned)s\nclosed:\n%(closed)s'
+    report_body = 'new:\n%(new)s\n' \
+                  'open:\n%(open)s\n' \
+                  'orphaned:\n%(orphaned)s\n' \
+                  'closed:\n%(closed)s'
     report_format = '- ml_name: %(ml_name)s\n  subject: %(subject)s\n' \
-                    '  created: %(created)s\n  updated: %(updated)s\n  by: %(by)s'
+                    '  created: %(created)s\n  updated: %(updated)s\n' \
+                    '  by: %(by)s'
 
     @mock.patch('tempml.cmd.reporter.db', fake_db)
     @mock.patch('tempml.cmd.reporter.smtplib.SMTP', DummySMTPClient)
-    def _test_report(self, _open, orphaned, closed):
+    def _test_report(self, new, _open, orphaned, closed):
         with mock.patch.object(DummySMTPClient, 'sendmail') as m:
             with mock.patch.object(fake_db, 'init_db') as m2:
                 m.side_effect = self._sendmail
@@ -110,6 +112,8 @@ class ProcessMessageTest(unittest.TestCase):
                                        charset='us-ascii',
                                        admins=['hoge@example.com'],
                                        domain="example.com")
+                self.assertEqual([_['ml_name'] for _ in self.data['new']],
+                                 new)
                 self.assertEqual([_['ml_name'] for _ in self.data['open']],
                                  _open)
                 self.assertEqual([_['ml_name'] for _ in self.data['orphaned']],
@@ -120,7 +124,16 @@ class ProcessMessageTest(unittest.TestCase):
     @mock.patch('tempml.cmd.reporter.db', fake_db)
     @mock.patch('tempml.cmd.reporter.smtplib.SMTP', DummySMTPClient)
     def test_report_without_ml(self):
-        self._test_report([], [], [])
+        self._test_report([], [], [], [])
+
+    @mock.patch('tempml.cmd.reporter.db', fake_db)
+    @mock.patch('tempml.cmd.reporter.smtplib.SMTP', DummySMTPClient)
+    def test_report_with_a_new_ml(self):
+        initial_members = {"test1@example.com", "test2@example.com",
+                           "test3@example.com", "test4@example.com"}
+        fake_db.create_ml('ml-000010', "hoge", initial_members,
+                          "test1@example.com")
+        self._test_report(['ml-000010'], [], [], [])
 
     @mock.patch('tempml.cmd.reporter.db', fake_db)
     @mock.patch('tempml.cmd.reporter.smtplib.SMTP', DummySMTPClient)
@@ -129,7 +142,9 @@ class ProcessMessageTest(unittest.TestCase):
                            "test3@example.com", "test4@example.com"}
         fake_db.create_ml('ml-000010', "hoge", initial_members,
                           "test1@example.com")
-        self._test_report(['ml-000010'], [], [])
+        fake_db.change_ml_status('ml-000010', const.STATUS_OPEN,
+                                 "test2@example.com")
+        self._test_report([], ['ml-000010'], [], [])
 
     @mock.patch('tempml.cmd.reporter.db', fake_db)
     @mock.patch('tempml.cmd.reporter.smtplib.SMTP', DummySMTPClient)
@@ -140,7 +155,7 @@ class ProcessMessageTest(unittest.TestCase):
                           "test1@example.com")
         fake_db.change_ml_status('ml-000010', const.STATUS_ORPHANED,
                                  "test2@example.com")
-        self._test_report([], ['ml-000010'], [])
+        self._test_report([], [], ['ml-000010'], [])
 
     @mock.patch('tempml.cmd.reporter.db', fake_db)
     @mock.patch('tempml.cmd.reporter.smtplib.SMTP', DummySMTPClient)
@@ -151,7 +166,7 @@ class ProcessMessageTest(unittest.TestCase):
                           "test1@example.com")
         fake_db.change_ml_status('ml-000010', const.STATUS_CLOSED,
                                  "test2@example.com")
-        self._test_report([], [], ['ml-000010'])
+        self._test_report([], [], [], ['ml-000010'])
 
     @mock.patch('tempml.cmd.reporter.db', fake_db)
     @mock.patch('tempml.cmd.reporter.smtplib.SMTP', DummySMTPClient)
@@ -164,4 +179,4 @@ class ProcessMessageTest(unittest.TestCase):
                           "test1@example.com")
         fake_db.create_ml('ml-000012', "hoge", initial_members,
                           "test1@example.com")
-        self._test_report(['ml-000010', 'ml-000011', 'ml-000012'], [], [])
+        self._test_report(['ml-000010', 'ml-000011', 'ml-000012'], [], [], [])
