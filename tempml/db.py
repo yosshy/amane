@@ -99,7 +99,7 @@ def create_ml(ml_name, subject, members, by):
         "members": list(members),
         "created": datetime.now(),
         "updated": datetime.now(),
-        "status": const.STATUS_OPEN,
+        "status": const.STATUS_NEW,
         "by": by,
         "logs": [log_dict]
     }

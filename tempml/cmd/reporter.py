@@ -70,21 +70,21 @@ def report_status(relay_host=None, relay_port=None, db_url=None, db_name=None,
 
     admins = normalize(admins)
 
-    _open = db.find_mls({'status': const.STATUS_OPEN},
-                        sortkey='updated', reverse=False)
+    new = db.find_mls({'status': const.STATUS_NEW}, sortkey='updated')
+    _open = db.find_mls({'status': const.STATUS_OPEN}, sortkey='updated')
     orphaned = db.find_mls({'status': const.STATUS_ORPHANED},
-                           sortkey='updated', reverse=False)
+                           sortkey='updated')
     closed_after = datetime.now() - timedelta(days=report_closed_days)
     closed = db.find_mls({'status': const.STATUS_CLOSED,
                           'updated': {'$gt': closed_after}},
                          sortkey='updated', reverse=False)
 
-    params = {'open': "\n".join([(report_format % convert(_))
-                                 for _ in _open if 'subject' in _]),
+    params = {'new': "\n".join([(report_format % convert(_)) for _ in new]),
+              'open': "\n".join([(report_format % convert(_)) for _ in _open]),
               'orphaned': "\n".join([(report_format % convert(_))
-                                     for _ in orphaned if 'subject' in _]),
+                                     for _ in orphaned]),
               'closed': "\n".join([(report_format % convert(_))
-                                   for _ in closed if 'subject' in _])}
+                                   for _ in closed])}
 
     content = report_body % params
     content = content.replace("\r\n", "\n").replace("\n", "\r\n")

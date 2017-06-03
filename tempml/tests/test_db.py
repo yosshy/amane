@@ -60,7 +60,7 @@ class DbTest(unittest.TestCase):
             self.assertEqual(ml['subject'], "hoge")
             self.assertEqual(ml['members'], members)
             self.assertEqual(ml['by'], by)
-            self.assertEqual(ml['status'], const.STATUS_OPEN)
+            self.assertEqual(ml['status'], const.STATUS_NEW)
             logs = [{
                 'op': const.OP_CREATE,
                 'by': by,
@@ -72,32 +72,45 @@ class DbTest(unittest.TestCase):
         ml1_name = ML_NAME % db.increase_counter()
         db.create_ml(ml1_name, "hoge", [], "xyz")
 
+        ml2_name = ML_NAME % db.increase_counter()
+        db.create_ml(ml2_name, "hoge", [], "xyz")
+        db.change_ml_status(ml2_name, const.STATUS_OPEN, "XYZ")
+
         time.sleep(1)
         now = datetime.now()
 
         time.sleep(1)
-        ml2_name = ML_NAME % db.increase_counter()
-        db.create_ml(ml2_name, "hoge", [], "xyz")
+        ml3_name = ML_NAME % db.increase_counter()
+        db.create_ml(ml3_name, "hoge", [], "xyz")
+        db.change_ml_status(ml3_name, const.STATUS_OPEN, "XYZ")
 
         db.mark_mls_orphaned(now, "XYZ")
         ml1 = db.get_ml(ml1_name)
         ml2 = db.get_ml(ml2_name)
-        self.assertEqual(ml1['status'], const.STATUS_ORPHANED)
-        self.assertEqual(ml1['by'], "XYZ")
-        self.assertEqual(ml2['status'], const.STATUS_OPEN)
+        ml3 = db.get_ml(ml3_name)
+        self.assertEqual(ml1['status'], const.STATUS_NEW)
+        self.assertEqual(ml2['status'], const.STATUS_ORPHANED)
+        self.assertEqual(ml2['by'], "XYZ")
+        self.assertEqual(ml3['status'], const.STATUS_OPEN)
 
         time.sleep(1)
         db.mark_mls_closed(datetime.now(), "XYZ")
         ml1 = db.get_ml(ml1_name)
         ml2 = db.get_ml(ml2_name)
-        self.assertEqual(ml1['status'], const.STATUS_CLOSED)
-        self.assertEqual(ml2['status'], const.STATUS_OPEN)
-        self.assertEqual(ml1['by'], "XYZ")
+        ml3 = db.get_ml(ml3_name)
+        self.assertEqual(ml1['status'], const.STATUS_NEW)
+        self.assertEqual(ml2['status'], const.STATUS_CLOSED)
+        self.assertEqual(ml3['status'], const.STATUS_OPEN)
+        self.assertEqual(ml2['by'], "XYZ")
         logs = [
             {
                 'op': const.OP_CREATE,
                 'by': "xyz",
                 'members': [],
+            },
+            {
+                'op': const.OP_REOPEN,
+                'by': "XYZ",
             },
             {
                 'op': const.OP_ORPHAN,
@@ -108,7 +121,7 @@ class DbTest(unittest.TestCase):
                 'by': "XYZ",
             },
         ]
-        self.assertEqual(ml1['logs'], logs)
+        self.assertEqual(ml2['logs'], logs)
 
     def test_add_and_del_members(self):
         ml_name = ML_NAME % db.increase_counter()

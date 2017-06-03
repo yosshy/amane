@@ -17,6 +17,7 @@
 Constants definition
 """
 
+STATUS_NEW = "new"
 STATUS_OPEN = "open"
 STATUS_ORPHANED = "orphaned"
 STATUS_CLOSED = "closed"
