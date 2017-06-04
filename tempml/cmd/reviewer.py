@@ -101,11 +101,9 @@ class Reviewer(object):
                 content = ""
                 content = template % params
                 content = content.replace("\r\n", "\n").replace("\n", "\r\n")
-                content += "\r\n".join(list(members))
                 self.send_post(ml_name, subject, content, members)
                 db.change_ml_status(ml_name, new_status, "reviewer")
             except:
-                raise
                 pass
 
     def send_post(self, ml_name, subject, content, members):
