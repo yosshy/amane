@@ -38,7 +38,7 @@ from tempml import db
 from tempml import log
 
 
-CONFIG_FILE = os.environ.get("TEMPML_CONFIG_FILE", "/etc/tempml/smtpd.conf")
+CONFIG_FILE = os.environ.get("TEMPML_CONFIG_FILE", "/etc/tempml/tempml.conf")
 ERROR_SUFFIX = '-error'
 REMOVE_RFC822 = re.compile("rfc822;", re.I)
 
@@ -59,23 +59,13 @@ def normalize(addresses):
 class TempMlSMTPServer(smtpd.SMTPServer):
 
     def __init__(self, listen_address=None, listen_port=None, relay_host=None,
-                 relay_port=None, db_url=None, db_name=None,
-                 ml_name_format=None, new_ml_account=None, domain=None,
+                 relay_port=None, db_url=None, db_name=None, domain=None,
                  debug=False, **kwargs):
 
         self.relay_host = relay_host
         self.relay_port = relay_port
-        self.ml_name_format = ml_name_format
-        self.new_ml_account = new_ml_account
         self.at_domain = "@" + domain
         self.debug = debug
-        self.new_ml_address = new_ml_account + self.at_domain
-        self.admins = normalize(kwargs.get('admins', []))
-        self.readme_msg = kwargs.get('readme_msg', "")
-        self.welcome_msg = kwargs.get('welcome_msg', "")
-        self.goodbye_msg = kwargs.get('goodbye_msg', "")
-        self.closed_msg = kwargs.get('closed_msg', "")
-        self.reopen_msg = kwargs.get('reopen_msg', "")
 
         db.init_db(db_url, db_name)
 
@@ -144,17 +134,23 @@ class TempMlSMTPServer(smtpd.SMTPServer):
                 logging.error("not delivered to %s for %s", error, ml_name)
             return
 
+        # Aquire current tenants
+        tenants = db.find_tenants({"status": const.TENANT_STATUS_ENABLED})
+
         # Want a new ML?
-        if ml_name == self.new_ml_account:
-            ml_name = self.ml_name_format % db.increase_counter()
-            members = (to | cc | _from) - self.admins
-            db.create_ml(ml_name, subject, members, mailfrom)
-            ml_address = ml_name + self.at_domain
-            params = dict(ml_name=ml_name, ml_address=ml_address,
-                          mailfrom=mailfrom)
-            self.send_message(ml_name, message, mailfrom, members, params,
-                              self.welcome_msg, 'Welcome.txt')
-            return
+        for config in tenants:
+            if ml_name == config['new_ml_account']:
+                tenant_name = config['tenant_name']
+                ml_name = config['ml_name_format'] % \
+                    db.increase_counter(config['tenant_name'])
+                members = (to | cc | _from) - config['admins']
+                db.create_ml(tenant_name, ml_name, subject, members, mailfrom)
+                ml_address = ml_name + self.at_domain
+                params = dict(ml_name=ml_name, ml_address=ml_address,
+                              mailfrom=mailfrom)
+                self.send_message(config, ml_name, message, mailfrom, members,
+                                  params, config['welcome_msg'], 'Welcome.txt')
+                return
 
         # Post a message to an existing ML
 
@@ -164,9 +160,20 @@ class TempMlSMTPServer(smtpd.SMTPServer):
             logging.error("No such ML: %s", ml_name)
             return const.SMTP_STATUS_NO_SUCH_ML
 
+        # Set config variable
+        for config in tenants:
+            if ml['tenant_name'] == config['new_ml_account']:
+                break
+        else:
+            if config is None:
+                logging.error("No such tenant: %s", ml['tenant_name'])
+                return const.SMTP_STATUS_NO_SUCH_TENANT
+
+        params['new_ml_address'] = config['new_ml_account'] + self.at_domain
+
         # Checking whether the sender is one of the ML members
         members = db.get_members(ml_name)
-        if mailfrom not in (members | self.admins):
+        if mailfrom not in (members | config['admins']):
             logging.error("Non-member post")
             return const.SMTP_STATUS_NOT_MEMBER
 
@@ -174,8 +181,8 @@ class TempMlSMTPServer(smtpd.SMTPServer):
         ml_status = ml['status']
         if ml_status == const.STATUS_CLOSED:
             if command == "reopen":
-                self.send_message(ml_name, message, mailfrom, members, params,
-                                  self.reopen_msg, 'Reopen.txt')
+                self.send_message(config, ml_name, message, mailfrom, members,
+                                  params, config['reopen_msg'], 'Reopen.txt')
                 db.change_ml_status(ml_name, const.STATUS_OPEN, mailfrom)
                 logging.info("reopened %s by %s", ml_name, mailfrom)
                 return
@@ -184,8 +191,8 @@ class TempMlSMTPServer(smtpd.SMTPServer):
             return const.SMTP_STATUS_CLOSED_ML
 
         elif command == "close":
-            self.send_message(ml_name, message, mailfrom, members, params,
-                              self.closed_msg, 'Closed.txt')
+            self.send_message(config, ml_name, message, mailfrom, members,
+                              params, config['goodbye_msg'], 'Goodbye.txt')
             db.change_ml_status(ml_name, const.STATUS_CLOSED, mailfrom)
             logging.info("closed %s by %s", ml_name, mailfrom)
             return
@@ -194,15 +201,16 @@ class TempMlSMTPServer(smtpd.SMTPServer):
             db.change_ml_status(ml_name, const.STATUS_OPEN, mailfrom)
 
         # Remove admin members from cc
-        cc -= self.admins
+        cc -= config['admins']
         params = dict(ml_name=ml_name, ml_address=ml_address,
                       mailfrom=mailfrom, cc="\r\n".join(list(cc)))
 
         # Remove cc'd members from the ML members if the subject is empty
         if command == "":
             if len(cc) > 0:
-                self.send_message(ml_name, message, mailfrom, members - cc,
-                                  params, self.goodbye_msg, 'Goodbye.txt')
+                self.send_message(config, ml_name, message, mailfrom,
+                                  members - cc, params, config['remove_msg'],
+                                  'RemoveMembers.txt')
                 db.del_members(ml_name, cc, mailfrom)
                 logging.info("removed %s from %s", cc, ml_name)
             return
@@ -214,10 +222,10 @@ class TempMlSMTPServer(smtpd.SMTPServer):
             members = db.get_members(ml_name)
 
         # Attach readme and send the post
-        self.send_message(ml_name, message, mailfrom, members, params,
-                          self.readme_msg, 'Readme.txt')
+        self.send_message(config, ml_name, message, mailfrom, members, params,
+                          config['readme_msg'], 'Readme.txt')
 
-    def send_message(self, ml_name, message, mailfrom, members, params,
+    def send_message(self, config, ml_name, message, mailfrom, members, params,
                      template, filename, charset="utf-8"):
         try:
             content = ""
@@ -229,7 +237,7 @@ class TempMlSMTPServer(smtpd.SMTPServer):
             part.set_param('name', filename)
             message.attach(part)
         finally:
-            members = db.get_members(ml_name)
+            members = db.get_members(ml_name) | config['admins']
             self.send_post(ml_name, message, mailfrom, members)
 
     def send_post(self, ml_name, message, mailfrom, members):
@@ -269,10 +277,10 @@ class TempMlSMTPServer(smtpd.SMTPServer):
         relay = smtplib.SMTP(self.relay_host, self.relay_port)
         if self.debug:
             relay.set_debuglevel(1)
-        relay.sendmail(_from, members | self.admins, message.as_string())
+        relay.sendmail(_from, members, message.as_string())
         relay.quit()
         logging.info("Sent: ml_name=%s|mailfrom=%s|members=%s|",
-                     ml_name, mailfrom, (members | self.admins))
+                     ml_name, mailfrom, members)
         db.log_post(ml_name, members, mailfrom)
 
 

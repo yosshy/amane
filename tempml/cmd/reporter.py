@@ -35,7 +35,7 @@ from tempml import db
 from tempml import log
 
 
-CONFIG_FILE = os.environ.get("TEMPML_CONFIG_FILE", "/etc/tempml/reporter.conf")
+CONFIG_FILE = os.environ.get("TEMPML_CONFIG_FILE", "/etc/tempml/tempml.conf")
 ERROR_RETURN = 'tempml-error'
 
 
@@ -60,21 +60,21 @@ def convert(data):
     return data
 
 
-def report_status(relay_host=None, relay_port=None, db_url=None, db_name=None,
-                  report_subject=None, report_body=None, report_format=None,
-                  report_closed_days=None, charset='utf8',
-                  admins=None, domain=None, debug=False,
-                  **kwargs):
+def report_tenant_status(relay_host=None, relay_port=None,
+                         db_url=None, db_name=None,
+                         report_subject=None, report_msg=None,
+                         report_format=None,
+                         days_to_close=None, charset='utf8',
+                         admins=None, domain=None, debug=False,
+                         **kwargs):
 
     db.init_db(db_url, db_name)
-
-    admins = normalize(admins)
 
     new = db.find_mls({'status': const.STATUS_NEW}, sortkey='updated')
     _open = db.find_mls({'status': const.STATUS_OPEN}, sortkey='updated')
     orphaned = db.find_mls({'status': const.STATUS_ORPHANED},
                            sortkey='updated')
-    closed_after = datetime.now() - timedelta(days=report_closed_days)
+    closed_after = datetime.now() - timedelta(days=days_to_close)
     closed = db.find_mls({'status': const.STATUS_CLOSED,
                           'updated': {'$gt': closed_after}},
                          sortkey='updated', reverse=False)
@@ -86,7 +86,7 @@ def report_status(relay_host=None, relay_port=None, db_url=None, db_name=None,
               'closed': "\n".join([(report_format % convert(_))
                                    for _ in closed])}
 
-    content = report_body % params
+    content = report_msg % params
     content = content.replace("\r\n", "\n").replace("\n", "\r\n")
 
     # Format a report message
@@ -110,6 +110,18 @@ def report_status(relay_host=None, relay_port=None, db_url=None, db_name=None,
     relay.sendmail(_from, admins, message.as_string())
     relay.quit()
     logging.debug("Sent a report mail")
+
+
+def report_status(relay_host=None, relay_port=None, db_url=None,
+                  db_name=None, domain=None, debug=False, **kwargs):
+
+    db.init_db(db_url, db_name)
+
+    tenants = db.find_tenants({'status': const.TENANT_STATUS_ENABLED})
+    for tenant in tenants:
+        report_tenant_status(
+            relay_host=relay_host, relay_port=relay_port, db_url=db_url,
+            db_name=db_name, domain=domain, debug=debug, **tenant)
 
 
 def main():

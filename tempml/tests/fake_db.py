@@ -26,8 +26,8 @@ from tempml import const
 
 
 DB = None
-COUNTER = 0
 MLS = {}
+TENANTS = {}
 
 
 def init_db(db_url, db_name):
@@ -41,31 +41,228 @@ def init_db(db_url, db_name):
     :rtype: None
     """
     logging.debug("fake_db: init_db")
-    global COUNTER
+
+
+def clear_db():
+    """
+    Initialize DB object and create a counter if missing
+
+    :param db_url: URL to the MongoDB
+    :type db_url: str
+    :param db_name: Database name to use
+    :type db_name: str
+    :rtype: None
+    """
+    logging.debug("fake_db: clear_db")
     global MLS
-    COUNTER = 0
+    global TENANTS
     MLS = {}
+    TENANTS = {}
 
 
-def increase_counter():
+def increase_counter(tenant_name):
     """
     Increment a counter within the database
     This is an atomic operation.
 
+    :param tenant_name: Tenant ID
+    :type tenant_name: str
     :return: The next count to use
     :rtype: int
     """
-    global COUNTER
+    global TENANTS
     logging.debug("fake_db: increase_counter")
-    COUNTER += 1
-    return COUNTER
+    TENANTS[tenant_name]['counter'] += 1
+    return TENANTS[tenant_name]['counter']
 
 
-def create_ml(ml_name, subject, members, by):
+def create_tenant(tenant_name, by, config):
+    """
+    Create a new tenant.
+    This ISN'T an atomic operation.
+
+    :param tenant_name: Tenant ID
+    :type tenant_name: str
+    :param by: email address of the operator
+    :type by: str
+    :param config: Various configuration for the tenant
+    :type config: dict
+    :rtype: None
+    """
+    global TENANTS
+    new_ml_account = config['new_ml_account']
+    for _tenant_name, tenant in TENANTS.items():
+        if _tenant_name == tenant_name:
+            logging.error("Tenant %s already exists: %s", tenant_name, tenant)
+            return
+        if tenant['new_ml_account'] != new_ml_account:
+            continue
+        logging.error("New ML account %s is duplicated", new_ml_account)
+        return
+
+    log_dict = {
+        "op": const.OP_CREATE,
+        "config": config,
+        "by": by,
+    }
+    tenant_dict = {
+        "tenant_name": tenant_name,
+        "created": datetime.now(),
+        "updated": datetime.now(),
+        "status": const.TENANT_STATUS_ENABLED,
+        "counter": 0,
+        "by": by,
+        "logs": [log_dict],
+        "admins": config["admins"],
+        "charset": config["charset"],
+        "ml_name_format": config["ml_name_format"],
+        "new_ml_account": config["new_ml_account"],
+        "days_to_close": config["days_to_close"],
+        "days_to_orphan": config["days_to_orphan"],
+        "welcome_msg": config["welcome_msg"],
+        "readme_msg": config["readme_msg"],
+        "remove_msg": config["remove_msg"],
+        "reopen_msg": config["reopen_msg"],
+        "goodbye_msg": config["goodbye_msg"],
+        "report_subject": config["report_subject"],
+        "report_msg": config["report_msg"],
+        "report_format": config["report_format"],
+        "orphaned_subject": config["orphaned_subject"],
+        "orphaned_msg": config["orphaned_msg"],
+        "closed_subject": config["closed_subject"],
+        "closed_msg": config["closed_msg"],
+    }
+    TENANTS[tenant_name] = tenant_dict
+    logging.debug("Tenant %s created: %s", tenant_name, config)
+
+
+def update_tenant(tenant_name, by, **config):
+    """
+    Update a tenant.
+    This ISN'T an atomic operation.
+
+    :param tenant_name: Tenant ID
+    :type tenant_name: str
+    :param by: email address of the operator
+    :type by: str
+    :keyword config: Various configuration for the tenant
+    :type config: dict
+    :rtype: None
+    """
+    global TENANTS
+    tenant = TENANTS[tenant_name]
+    if tenant is None:
+        logging.error("Tenant %s not found", tenant_name)
+        return
+
+    if 'new_ml_account' in config:
+        new_ml_account = config['new_ml_account']
+        for t in TENANTS:
+            if t == tenant:
+                continue
+            if t['new_ml_account'] != new_ml_account:
+                continue
+            logging.error("New ML account %s is duplicated", new_ml_account)
+            return
+
+    if by not in tenant['admins'] and by != "CLI":
+        logging.error("%s is not an admin of %s", by, tenant_name)
+        return
+
+    logging.debug("before: %s", tenant)
+    log_dict = {
+        "op": const.OP_UPDATE,
+        "config": config,
+        "by": by,
+    }
+
+    for key, value in config.items():
+        if key in ["tenant_name", "by", "created", "updated", "logs"]:
+            continue
+        if key not in tenant:
+            config.pop(key)
+        tenant[key] = value
+    tenant["updated"] = datetime.now()
+
+    if logging.root.level == logging.DEBUG:
+        logging.debug("after: %s", TENANTS[tenant_name])
+
+
+def delete_tenant(tenant_name):
+    """
+    Delete a ML
+    This is an atomic operation.
+
+    :param tenant_name: Tenant ID
+    :type tenant_name: str
+    :return: Tenant information
+    :rtype: dict
+    """
+    for ml in MLS:
+        if ml['tenant_name'] == tenant_name:
+            del ml
+    if tenant_name in TENANTS:
+        del TENANTS[tenant_name]
+        if logging.root.level == logging.DEBUG:
+            logging.debug("delete: %s", tenant_name)
+
+
+def get_tenant(tenant_name):
+    """
+    Aquire a ML
+    This is an atomic operation.
+
+    :param tenant_name: Tenant ID
+    :type tenant_name: str
+    :return: Tenant information
+    :rtype: dict
+    """
+    return TENANTS.get(tenant_name)
+
+
+def find_tenants(cond, sortkey=None, reverse=False):
+    """
+    Aquire tenants with conditions
+    This is an atomic operation.
+
+    :param cond: Conditions
+    :type cond: dict
+    :keyword sortkey: sort pattern
+    :type sortkey: str
+    :keyword reverse: Reverse sort or not
+    :type reverse: bool
+    :return: tenant objects
+    :rtype: [dict]
+    """
+    result = TENANTS.values()
+    for key, value in cond.items():
+        if isinstance(value, dict):
+            for k, v in value.items():
+                if k == '$gt':
+                    result = [_ for _ in result if _[key] > v]
+                elif k == '$gte':
+                    result = [_ for _ in result if _[key] >= v]
+                elif k == '$lt':
+                    result = [_ for _ in result if _[key] < v]
+                elif k == '$lte':
+                    result = [_ for _ in result if _[key] <= v]
+                elif k == '$ne':
+                    result = [_ for _ in result if _[key] != v]
+        else:
+            result = [_ for _ in result if _[key] == value]
+        print("RESULT: %s" % result)
+    if sortkey:
+        result.sort(key=lambda _: _[sortkey], reverse=reverse)
+    return result
+
+
+def create_ml(tenant_name, ml_name, subject, members, by):
     """
     Create a new ML and register members into it
     This is an atomic operation.
 
+    :param tenant_name: Tenant ID
+    :type tenant_name: str
     :param ml_name: ML ID
     :type ml_name: str
     :param subject: subject of the original mail
@@ -81,9 +278,10 @@ def create_ml(ml_name, subject, members, by):
     log_dict = {
         "op": const.OP_CREATE,
         "by": by,
-        "members": list(members)
+        "members": members
     }
     ml_dict = {
+        "tenant_name": tenant_name,
         "ml_name": ml_name,
         "subject": subject,
         "members": members,
@@ -109,7 +307,7 @@ def get_ml(ml_name):
     :rtype: dict
     """
     logging.debug("fake_db: get_ml")
-    return MLS[ml_name]
+    return MLS.get(ml_name)
 
 
 def find_mls(cond, sortkey=None, reverse=False):
@@ -216,7 +414,10 @@ def change_ml_status(ml_name, status, by):
     """
     logging.debug("fake_db: change_ml_status")
     global MLS
-    ml = MLS[ml_name]
+    ml = MLS.get(ml_name)
+    if ml is None:
+        logging.error("ml %s not found", ml_name)
+        return
     log_dict = {
         "op": const.OP_MAP[status],
         "by": by,

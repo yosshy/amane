@@ -39,13 +39,131 @@ class DbTest(unittest.TestCase):
     def tearDown(self):
         db.DB._Database__client.drop_database(self.db_name)
 
-    def test_counter(self):
-        self.assertEqual(db.DB.counter.count(), 1)
 
-        ml_id = db.increase_counter()
+class TenantTest(DbTest):
+
+    config = {
+        "admins": {"hoge"},
+        "charset": "iso-2022-jp",
+        "ml_name_format": "ml1-%06d",
+        "new_ml_account": "ml1-new",
+        "days_to_close": 7,
+        "days_to_orphan": 7,
+        "welcome_msg": "welcome_msg",
+        "readme_msg": "readme_msg",
+        "remove_msg": "remove_msg",
+        "reopen_msg": "reopen_msg",
+        "goodbye_msg": "goodbye_msg",
+        "report_subject": "report_subject",
+        "report_msg": "report_msg",
+        "report_format": "report_format",
+        "orphaned_subject": "orphaned_subject",
+        "orphaned_msg": "orphaned_msg",
+        "closed_subject": "closed_subject",
+        "closed_msg": "closed_msg",
+    }
+
+    def test_create_tenant(self):
+        tenant_name = "tenant1"
+        db.create_tenant(tenant_name, "hoge", self.config)
+        tenant = db.get_tenant(tenant_name)
+        for key, value in self.config.items():
+            self.assertEqual(tenant[key], value)
+
+        db.update_tenant(tenant_name, "hoge",
+                         ml_name_format="ml2-%06d", new_ml_account="ml2-new")
+        tenant = db.get_tenant(tenant_name)
+        self.assertEqual(tenant["ml_name_format"], "ml2-%06d")
+        self.assertEqual(tenant["new_ml_account"], "ml2-new")
+        db.delete_tenant(tenant_name)
+        self.assertEqual(db.get_tenant(tenant_name), None)
+
+    def test_delete_tenant(self):
+        tenant_name = "tenant1"
+        members = ["test1@testml.net"]
+        by = "test1@testml.net"
+        db.create_tenant(tenant_name, "hoge", self.config)
+        config = {
+            "admins": {"hoge"},
+            "charset": "iso-2022-jp",
+            "ml_name_format": "ml1-%06d",
+            "new_ml_account": "ml1-new",
+            "days_to_close": 7,
+            "days_to_orphan": 7,
+            "welcome_msg": "welcome_msg",
+            "readme_msg": "readme_msg",
+            "remove_msg": "remove_msg",
+            "reopen_msg": "reopen_msg",
+            "goodbye_msg": "goodbye_msg",
+            "report_subject": "report_subject",
+            "report_msg": "report_msg",
+            "report_format": "report_format",
+            "orphaned_subject": "orphaned_subject",
+            "orphaned_msg": "orphaned_msg",
+            "closed_subject": "closed_subject",
+            "closed_msg": "closed_msg",
+        }
+        db.create_ml(tenant_name, "ml1", "hoge", members, by)
+        config['new_ml_account'] = 'ml2-new'
+        db.create_ml(tenant_name, "ml2", "hoge", members, by)
+        ret = db.find_mls({"tenant_name": tenant_name})
+        self.assertEqual(len(list(ret)), 2)
+        db.delete_tenant(tenant_name)
+        ret = db.find_mls({"tenant_name": tenant_name})
+        self.assertEqual(len(list(ret)), 0)
+
+    def test_find_tenants(self):
+        for tenant_name in ["tenant1", "tenant2", "tenant3"]:
+            self.config['tenant_name'] = tenant_name
+            self.config['new_ml_account'] = tenant_name
+            db.create_tenant(tenant_name, "tenant_name", self.config)
+
+        ret = db.find_tenants({"status": const.TENANT_STATUS_ENABLED})
+        self.assertEqual(len(list(ret)), 3)
+        ret = db.find_tenants({"new_ml_account": "tenant1"})
+        self.assertEqual(len(list(ret)), 1)
+        ret = db.find_tenants({"status": const.TENANT_STATUS_ENABLED},
+                              sortkey="by")
+        self.assertEqual([_['tenant_name'] for _ in ret],
+                         ["tenant1", "tenant2", "tenant3"])
+        ret = db.find_tenants({"status": const.TENANT_STATUS_ENABLED},
+                              sortkey="created", reverse=True)
+        self.assertEqual([_['tenant_name'] for _ in ret],
+                         ["tenant3", "tenant2", "tenant1"])
+
+
+class MlTest(DbTest):
+
+    def setUp(self):
+        super().setUp()
+        self.tenant_name = "tenant1"
+        config = {
+            "admins": {"hoge"},
+            "charset": "iso-2022-jp",
+            "ml_name_format": "ml1-%06d",
+            "new_ml_account": "ml1-new",
+            "days_to_close": 7,
+            "days_to_orphan": 7,
+            "welcome_msg": "welcome_msg",
+            "readme_msg": "readme_msg",
+            "remove_msg": "remove_msg",
+            "reopen_msg": "reopen_msg",
+            "goodbye_msg": "goodbye_msg",
+            "report_subject": "report_subject",
+            "report_msg": "report_msg",
+            "report_format": "report_format",
+            "orphaned_subject": "orphaned_subject",
+            "orphaned_msg": "orphaned_msg",
+            "closed_subject": "closed_subject",
+            "closed_msg": "closed_msg",
+        }
+        db.create_tenant(self.tenant_name, "hoge", config)
+
+    def test_counter(self):
+        ml_id = db.increase_counter(self.tenant_name)
         self.assertEqual(ml_id, 1)
 
-        ml_id = db.increase_counter()
+        ml_id = db.increase_counter(self.tenant_name)
         self.assertEqual(ml_id, 2)
 
     def test_create_ml(self):
@@ -53,8 +171,8 @@ class DbTest(unittest.TestCase):
         by = "xyz"
 
         for i in range(1, 4):
-            ml_name = ML_NAME % db.increase_counter()
-            db.create_ml(ml_name, "hoge", members, by)
+            ml_name = ML_NAME % db.increase_counter(self.tenant_name)
+            db.create_ml(self.tenant_name, ml_name, "hoge", members, by)
             ml = db.get_ml(ml_name)
             self.assertEqual(ml['ml_name'], ml_name)
             self.assertEqual(ml['subject'], "hoge")
@@ -69,19 +187,19 @@ class DbTest(unittest.TestCase):
             self.assertEqual(ml['logs'], logs)
 
     def test_mark_mls_orphaned_and_closed(self):
-        ml1_name = ML_NAME % db.increase_counter()
-        db.create_ml(ml1_name, "hoge", [], "xyz")
+        ml1_name = ML_NAME % db.increase_counter(self.tenant_name)
+        db.create_ml(self.tenant_name, ml1_name, "hoge", [], "xyz")
 
-        ml2_name = ML_NAME % db.increase_counter()
-        db.create_ml(ml2_name, "hoge", [], "xyz")
+        ml2_name = ML_NAME % db.increase_counter(self.tenant_name)
+        db.create_ml(self.tenant_name, ml2_name, "hoge", [], "xyz")
         db.change_ml_status(ml2_name, const.STATUS_OPEN, "XYZ")
 
         time.sleep(1)
         now = datetime.now()
 
         time.sleep(1)
-        ml3_name = ML_NAME % db.increase_counter()
-        db.create_ml(ml3_name, "hoge", [], "xyz")
+        ml3_name = ML_NAME % db.increase_counter(self.tenant_name)
+        db.create_ml(self.tenant_name, ml3_name, "hoge", [], "xyz")
         db.change_ml_status(ml3_name, const.STATUS_OPEN, "XYZ")
 
         db.mark_mls_orphaned(now, "XYZ")
@@ -124,8 +242,8 @@ class DbTest(unittest.TestCase):
         self.assertEqual(ml2['logs'], logs)
 
     def test_add_and_del_members(self):
-        ml_name = ML_NAME % db.increase_counter()
-        db.create_ml(ml_name, "hoge", set(), "xyz")
+        ml_name = ML_NAME % db.increase_counter(self.tenant_name)
+        db.create_ml(self.tenant_name, ml_name, "hoge", set(), "xyz")
         self.assertEqual(db.get_members(ml_name), set())
 
         db.add_members(ml_name, {"abc", "def"}, "xyz")
@@ -169,8 +287,8 @@ class DbTest(unittest.TestCase):
         self.assertEqual(db.get_logs(ml_name), logs)
 
     def test_change_ml_status(self):
-        ml_name = ML_NAME % db.increase_counter()
-        db.create_ml(ml_name, "hoge", set(), "xyz")
+        ml_name = ML_NAME % db.increase_counter(self.tenant_name)
+        db.create_ml(self.tenant_name, ml_name, "hoge", set(), "xyz")
         self.assertEqual(db.get_members(ml_name), set())
 
         db.change_ml_status(ml_name, const.STATUS_ORPHANED, "xxx")
@@ -189,11 +307,11 @@ class DbTest(unittest.TestCase):
         self.assertEqual(ml['logs'][-1]['op'], const.OP_REOPEN)
 
     def test_find_mls(self):
-        db.create_ml("a", "hoge1", set(), "xyz")
+        db.create_ml(self.tenant_name, "a", "hoge1", set(), "xyz")
         time.sleep(1)
-        db.create_ml("b", "hoge2", set(), "xyz")
+        db.create_ml(self.tenant_name, "b", "hoge2", set(), "xyz")
         time.sleep(1)
-        db.create_ml("c", "hoge1", set(), "xyz")
+        db.create_ml(self.tenant_name, "c", "hoge1", set(), "xyz")
 
         ret = db.find_mls({"subject": "hoge1"})
         self.assertEqual(len(list(ret)), 2)

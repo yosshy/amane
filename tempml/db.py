@@ -17,6 +17,7 @@
 Database handler
 """
 
+import copy
 from datetime import datetime
 import logging
 import pymongo
@@ -30,7 +31,7 @@ DB = None
 
 def init_db(db_url, db_name):
     """
-    Initialize DB object and create a counter if missing
+    Initialize DB object
 
     :param db_url: URL to the MongoDB
     :type db_url: str
@@ -42,36 +43,202 @@ def init_db(db_url, db_name):
     client = pymongo.MongoClient(db_url)
     DB = client[db_name]
 
-    n = DB.counter.count()
-    if n == 0:
-        logging.debug("we have no counter collection")
-        counter = DB.counter.insert_one({'seq': 1})
-        logging.debug("counter collection created")
-    elif n == 1:
-        counter = DB.counter.find_one()
-        logging.debug("counter collection found: %s", counter)
-    else:
-        logging.error("we have %d counter collections", n)
 
-
-def increase_counter():
+def increase_counter(tenant_name):
     """
     Increment a counter within the database
     This is an atomic operation.
 
+    :param tenant_name: Tenant ID
+    :type tenant_name: str
     :return: The next count to use
     :rtype: int
     """
-    counter = DB.counter.find_one_and_update({}, {'$inc': {'seq': 1}})
-    logging.debug("increased. before: %s", counter)
-    return counter['seq']
+    tenant = DB.tenant.find_one_and_update({'tenant_name': tenant_name},
+                                           {'$inc': {'counter': 1}})
+    logging.debug("increased. before: %s", tenant)
+    return tenant['counter']
 
 
-def create_ml(ml_name, subject, members, by):
+def create_tenant(tenant_name, by, config):
+    """
+    Create a new tenant.
+    This ISN'T an atomic operation.
+
+    :param tenant_name: Tenant ID
+    :type tenant_name: str
+    :param by: email address of the operator
+    :type by: str
+    :param config: Various configuration for the tenant
+    :type config: dict
+    :rtype: None
+    """
+    config = copy.copy(config)
+    new_ml_account = config['new_ml_account']
+    tenant = DB.tenant.find_one({'new_ml_account': new_ml_account})
+    if tenant:
+        logging.error("New ML account %s is duplicated", new_ml_account)
+        return
+
+    tenant = DB.tenant.find_one({'tenant_name': tenant_name})
+    if tenant:
+        logging.error("Tenant %s already exists: %s", tenant_name, tenant)
+        return
+
+    config["admins"] = list(config["admins"])
+    log_dict = {
+        "op": const.OP_CREATE,
+        "config": config,
+        "by": by,
+    }
+    tenant_dict = {
+        "tenant_name": tenant_name,
+        "created": datetime.now(),
+        "updated": datetime.now(),
+        "counter": 1,
+        "status": const.TENANT_STATUS_ENABLED,
+        "by": by,
+        "logs": [log_dict],
+        "admins": config["admins"],
+        "charset": config["charset"],
+        "ml_name_format": config["ml_name_format"],
+        "new_ml_account": config["new_ml_account"],
+        "days_to_close": config["days_to_close"],
+        "days_to_orphan": config["days_to_orphan"],
+        "welcome_msg": config["welcome_msg"],
+        "readme_msg": config["readme_msg"],
+        "remove_msg": config["remove_msg"],
+        "reopen_msg": config["reopen_msg"],
+        "goodbye_msg": config["goodbye_msg"],
+        "report_subject": config["report_subject"],
+        "report_msg": config["report_msg"],
+        "report_format": config["report_format"],
+        "orphaned_subject": config["orphaned_subject"],
+        "orphaned_msg": config["orphaned_msg"],
+        "closed_subject": config["closed_subject"],
+        "closed_msg": config["closed_msg"],
+    }
+    DB.tenant.insert_one(tenant_dict)
+    logging.debug("Tenant %s created: %s", tenant_name, tenant_dict)
+
+
+def update_tenant(tenant_name, by, **config):
+    """
+    Update a tenant.
+    This ISN'T an atomic operation.
+
+    :param tenant_name: Tenant ID
+    :type tenant_name: str
+    :param by: email address of the operator
+    :type by: str
+    :keyword config: Various configuration for the tenant
+    :type config: dict
+    :rtype: None
+    """
+    tenant = DB.tenant.find_one({'tenant_name': tenant_name})
+    if tenant is None:
+        logging.error("Tenant %s not found", tenant_name)
+        return
+
+    if 'new_ml_account' in config:
+        new_ml_account = config['new_ml_account']
+        tenant2 = DB.tenant.find_one({'new_ml_account': new_ml_account,
+                                      'tenant_name': {'$ne': tenant_name}})
+        if tenant2:
+            logging.error("New ML account %s is duplicated", new_ml_account)
+            return
+
+    if by not in tenant['admins'] and by != "CLI":
+        logging.error("%s is not an admin of %s", by, tenant_name)
+        return
+
+    logging.debug("before: %s", tenant)
+    log_dict = {
+        "op": const.OP_UPDATE,
+        "config": config,
+        "by": by,
+    }
+    for key, value in config.items():
+        if key in ["tenant_name", "by", "created", "updated", "logs"]:
+            continue
+        if key not in tenant:
+            config.pop(key)
+        if key == "admins":
+            config[key] = list(value)
+    config["updated"] = datetime.now()
+    DB.tenant.find_one_and_update({"tenant_name": tenant_name},
+                                  {"$set": config,
+                                   "$push": {"logs": log_dict}})
+    if logging.root.level == logging.DEBUG:
+        tenant = DB.tenant.find_one({'tenant_name': tenant_name})
+        logging.debug("after: %s", tenant)
+
+
+def delete_tenant(tenant_name):
+    """
+    Delete a ML
+    This is an atomic operation.
+
+    :param tenant_name: Tenant ID
+    :type tenant_name: str
+    :rtype: None
+    """
+    DB.ml.delete_many({'tenant_name': tenant_name})
+    DB.tenant.delete_one({'tenant_name': tenant_name})
+    if logging.root.level == logging.DEBUG:
+        logging.debug("delete: %s", tenant_name)
+
+
+def get_tenant(tenant_name):
+    """
+    Aquire a ML
+    This is an atomic operation.
+
+    :param tenant_name: Tenant ID
+    :type tenant_name: str
+    :return: Tenant information
+    :rtype: dict
+    """
+    tenant = DB.tenant.find_one({'tenant_name': tenant_name})
+    if tenant:
+        tenant["admins"] = set(tenant["admins"])
+    return tenant
+
+
+def find_tenants(cond, sortkey=None, reverse=False):
+    """
+    Aquire tenants with conditions
+    This is an atomic operation.
+
+    :param cond: Conditions
+    :type cond: dict
+    :keyword sortkey: sort pattern
+    :type sortkey: str
+    :keyword reverse: Reverse sort or not
+    :type reverse: bool
+    :return: tenant objects
+    :rtype: [dict]
+    """
+    if sortkey:
+        if reverse:
+            data = list(DB.tenant.find(cond, sort=[(sortkey, -1)]))
+        else:
+            data = list(DB.tenant.find(cond, sort=[(sortkey, 1)]))
+    else:
+        data = list(DB.tenant.find(cond))
+
+    for i in data:
+        i["admins"] = set(i["admins"])
+    return data
+
+
+def create_ml(tenant_name, ml_name, subject, members, by):
     """
     Create a new ML and register members into it
     This is an atomic operation.
 
+    :param tenant_name: Tenant ID of the ML
+    :type tenant_name: str
     :param ml_name: ML ID
     :type ml_name: str
     :param subject: subject of the original mail
@@ -94,6 +261,7 @@ def create_ml(ml_name, subject, members, by):
         "members": list(members)
     }
     ml_dict = {
+        "tenant_name": tenant_name,
         "ml_name": ml_name,
         "subject": subject,
         "members": list(members),

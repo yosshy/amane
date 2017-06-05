@@ -74,13 +74,33 @@ class ProcessMessageTest(unittest.TestCase):
             relay_port=1025,
             db_url="mongodb://localhost",
             db_name=self.db_name,
-            ml_name_format="ml-%06d",
-            new_ml_account="new",
-            domain="testml.net",
-            admin_file=None)
+            domain="testml.net")
+
+        self.tenant_name = "tenant1"
+        config = {
+            "admins": {"hoge"},
+            "charset": "iso-2022-jp",
+            "ml_name_format": "ml-%06d",
+            "new_ml_account": "new",
+            "days_to_close": 7,
+            "days_to_orphan": 7,
+            "welcome_msg": "welcome_msg",
+            "readme_msg": "readme_msg",
+            "remove_msg": "remove_msg",
+            "reopen_msg": "reopen_msg",
+            "goodbye_msg": "goodbye_msg",
+            "report_subject": "report_subject",
+            "report_msg": "report_msg",
+            "report_format": "report_format",
+            "orphaned_subject": "orphaned_subject",
+            "orphaned_msg": "orphaned_msg",
+            "closed_subject": "closed_subject",
+            "closed_msg": "closed_msg",
+        }
+        fake_db.create_tenant(self.tenant_name, "hoge", config)
 
     def tearDown(self):
-        pass
+        fake_db.clear_db()
 
     def _send_post(self, ml_name, message, mailfrom, members):
         self.ml_name_arg = ml_name
@@ -219,7 +239,7 @@ class ProcessMessageTest(unittest.TestCase):
     def test_send_a_post_from_non_member(self):
         ml_name = 'ml-000010'
         initial_members = {"test1@example.com"}
-        fake_db.create_ml(ml_name, "hoge", initial_members,
+        fake_db.create_ml("tenant1", ml_name, "hoge", initial_members,
                           "test1@example.com")
 
         msg = 'From: Test2 <test2@example.com>\n' \
@@ -239,7 +259,7 @@ class ProcessMessageTest(unittest.TestCase):
 
     def test_send_a_post_w_2_tos(self):
         initial_members = {"test1@example.com"}
-        fake_db.create_ml('ml-000010', "hoge", initial_members,
+        fake_db.create_ml("tenant1", 'ml-000010', "hoge", initial_members,
                           "test1@example.com")
         msg = 'From: Test1 <test1@example.com>\n' \
               'To: ml-000010 <ml-000010@testml.net>, ' \
@@ -261,7 +281,7 @@ class ProcessMessageTest(unittest.TestCase):
 
     def test_add_members_w_1_cc(self):
         initial_members = {"test1@example.com"}
-        fake_db.create_ml('ml-000010', "hoge", initial_members,
+        fake_db.create_ml("tenant1", 'ml-000010', "hoge", initial_members,
                           "test1@example.com")
         msg = 'From: Test1 <test1@example.com>\n' \
               'To: ml-000010 <ml-000010@testml.net>\n' \
@@ -283,7 +303,7 @@ class ProcessMessageTest(unittest.TestCase):
 
     def test_add_members_w_2_ccs(self):
         initial_members = {"test1@example.com"}
-        fake_db.create_ml('ml-000010', "hoge", initial_members,
+        fake_db.create_ml("tenant1", 'ml-000010', "hoge", initial_members,
                           "test1@example.com")
         msg = 'From: Test1 <test1@example.com>\n' \
               'To: ml-000010 <ml-000010@testml.net>\n' \
@@ -306,7 +326,7 @@ class ProcessMessageTest(unittest.TestCase):
 
     def test_add_members_w_2_tos_and_2_ccs(self):
         initial_members = {"test1@example.com"}
-        fake_db.create_ml('ml-000010', "hoge", initial_members,
+        fake_db.create_ml("tenant1", 'ml-000010', "hoge", initial_members,
                           "test1@example.com")
         msg = 'From: Test1 <test1@example.com>\n' \
               'To: ml-000010 <ml-000010@testml.net>, ' \
@@ -330,7 +350,7 @@ class ProcessMessageTest(unittest.TestCase):
 
     def test_del_members_w_2_tos(self):
         initial_members = {"test1@example.com", "test2@example.com"}
-        fake_db.create_ml('ml-000010', "hoge", initial_members,
+        fake_db.create_ml("tenant1", 'ml-000010', "hoge", initial_members,
                           "test1@example.com")
         msg = 'From: Test1 <test1@example.com>\n' \
               'To: ml-000010 <ml-000010@testml.net>, ' \
@@ -352,7 +372,7 @@ class ProcessMessageTest(unittest.TestCase):
 
     def test_del_members_w_1_cc(self):
         initial_members = {"test1@example.com", "test3@example.com"}
-        fake_db.create_ml('ml-000010', "hoge", initial_members,
+        fake_db.create_ml("tenant1", 'ml-000010', "hoge", initial_members,
                           "test1@example.com")
         msg = 'From: Test1 <test1@example.com>\n' \
               'To: ml-000010 <ml-000010@testml.net>\n' \
@@ -375,7 +395,7 @@ class ProcessMessageTest(unittest.TestCase):
     def test_del_members_w_2_ccs(self):
         initial_members = {"test1@example.com", "test3@example.com",
                            "test4@example.com"}
-        fake_db.create_ml('ml-000010', "hoge", initial_members,
+        fake_db.create_ml("tenant1", 'ml-000010', "hoge", initial_members,
                           "test1@example.com")
         msg = 'From: Test1 <test1@example.com>\n' \
               'To: ml-000010 <ml-000010@testml.net>\n' \
@@ -398,7 +418,7 @@ class ProcessMessageTest(unittest.TestCase):
     def test_del_members_w_2_tos_and_2_ccs(self):
         initial_members = {"test1@example.com", "test2@example.com",
                            "test3@example.com", "test4@example.com"}
-        fake_db.create_ml('ml-000010', "hoge", initial_members,
+        fake_db.create_ml("tenant1", 'ml-000010', "hoge", initial_members,
                           "test1@example.com")
         msg = 'From: Test1 <test1@example.com>\n' \
               'To: ml-000010 <ml-000010@testml.net>, ' \
@@ -422,7 +442,7 @@ class ProcessMessageTest(unittest.TestCase):
     def test_error_return(self):
         initial_members = {"test1@example.com", "test2@example.com",
                            "test3@example.com", "test4@example.com"}
-        fake_db.create_ml('ml-000010', "hoge", initial_members,
+        fake_db.create_ml("tenant1", 'ml-000010', "hoge", initial_members,
                           "test1@example.com")
         msg = 'From: MAILER-DAEMON <daemon@example.com>\n' \
               'To: ml-000010-error <ml-000010-error@testml.net>\n' \
@@ -446,7 +466,7 @@ class ProcessMessageTest(unittest.TestCase):
     def test_close_ml(self):
         initial_members = {"test1@example.com", "test2@example.com",
                            "test3@example.com", "test4@example.com"}
-        fake_db.create_ml('ml-000010', "hoge", initial_members,
+        fake_db.create_ml("tenant1", 'ml-000010', "hoge", initial_members,
                           "test1@example.com")
         msg = 'From: Test1 <test1@example.com>\n' \
               'To: ml-000010 <ml-000010@testml.net>, ' \
@@ -472,7 +492,7 @@ class ProcessMessageTest(unittest.TestCase):
     def test_post_closed_ml(self):
         initial_members = {"test1@example.com", "test2@example.com",
                            "test3@example.com", "test4@example.com"}
-        fake_db.create_ml('ml-000010', "hoge", initial_members,
+        fake_db.create_ml("tenant1", 'ml-000010', "hoge", initial_members,
                           "test1@example.com")
         fake_db.change_ml_status('ml-000010', const.STATUS_CLOSED,
                                  "test2@example.com")
@@ -497,7 +517,7 @@ class ProcessMessageTest(unittest.TestCase):
     def test_close_closed_ml(self):
         initial_members = {"test1@example.com", "test2@example.com",
                            "test3@example.com", "test4@example.com"}
-        fake_db.create_ml('ml-000010', "hoge", initial_members,
+        fake_db.create_ml("tenant1", 'ml-000010', "hoge", initial_members,
                           "test1@example.com")
         fake_db.change_ml_status('ml-000010', const.STATUS_CLOSED,
                                  "test2@example.com")
@@ -522,7 +542,7 @@ class ProcessMessageTest(unittest.TestCase):
     def test_reopen_closed_ml(self):
         initial_members = {"test1@example.com", "test2@example.com",
                            "test3@example.com", "test4@example.com"}
-        fake_db.create_ml('ml-000010', "hoge", initial_members,
+        fake_db.create_ml("tenant1", 'ml-000010', "hoge", initial_members,
                           "test1@example.com")
         fake_db.change_ml_status('ml-000010', const.STATUS_CLOSED,
                                  "test2@example.com")
@@ -550,7 +570,7 @@ class ProcessMessageTest(unittest.TestCase):
     def test_reopen_orphaned_ml(self):
         initial_members = {"test1@example.com", "test2@example.com",
                            "test3@example.com", "test4@example.com"}
-        fake_db.create_ml('ml-000010', "hoge", initial_members,
+        fake_db.create_ml("tenant1", 'ml-000010', "hoge", initial_members,
                           "test1@example.com")
         fake_db.change_ml_status('ml-000010', const.STATUS_ORPHANED,
                                  "test2@example.com")
@@ -578,7 +598,7 @@ class ProcessMessageTest(unittest.TestCase):
     def test_reopen_open_ml(self):
         initial_members = {"test1@example.com", "test2@example.com",
                            "test3@example.com", "test4@example.com"}
-        fake_db.create_ml('ml-000010', "hoge", initial_members,
+        fake_db.create_ml("tenant1", 'ml-000010', "hoge", initial_members,
                           "test1@example.com")
         msg = 'From: Test1 <test1@example.com>\n' \
               'To: ml-000010 <ml-000010@testml.net>, ' \
@@ -618,14 +638,33 @@ class ProcessMessageWithAdminsTest(unittest.TestCase):
             relay_port=1025,
             db_url="mongodb://localhost",
             db_name=self.db_name,
-            ml_name_format="ml-%06d",
-            new_ml_account="new",
-            domain="testml.net",
-            admins=["Test2 <test2@example.com>", "Test4 <test4@example.com>",
-                    "Test5 <test5@example.com>", "Test6 <test6@example.com>"])
+            domain="testml.net")
+        self.tenant_name = "tenant1"
+        config = {
+            "admins": {"test2@example.com", "test4@example.com",
+                       "test5@example.com", "test6@example.com"},
+            "charset": "iso-2022-jp",
+            "ml_name_format": "ml-%06d",
+            "new_ml_account": "new",
+            "days_to_close": 7,
+            "days_to_orphan": 7,
+            "welcome_msg": "welcome_msg",
+            "readme_msg": "readme_msg",
+            "remove_msg": "remove_msg",
+            "reopen_msg": "reopen_msg",
+            "goodbye_msg": "goodbye_msg",
+            "report_subject": "report_subject",
+            "report_msg": "report_msg",
+            "report_format": "report_format",
+            "orphaned_subject": "orphaned_subject",
+            "orphaned_msg": "orphaned_msg",
+            "closed_subject": "closed_subject",
+            "closed_msg": "closed_msg",
+        }
+        fake_db.create_tenant(self.tenant_name, "hoge", config)
 
     def tearDown(self):
-        pass
+        fake_db.clear_db()
 
     def _send_post(self, ml_name, message, mailfrom, members):
         self.ml_name_arg = ml_name
@@ -747,7 +786,7 @@ class ProcessMessageWithAdminsTest(unittest.TestCase):
     def test_send_a_post_by_admin(self):
         ml_name = 'ml-000010'
         initial_members = {"test1@example.com"}
-        fake_db.create_ml(ml_name, "hoge", initial_members,
+        fake_db.create_ml("tenant1", ml_name, "hoge", initial_members,
                           "test1@example.com")
         final_members = {"test1@example.com"}
 
@@ -769,7 +808,7 @@ class ProcessMessageWithAdminsTest(unittest.TestCase):
 
     def test_add_members_w_2_tos_i_admin(self):
         initial_members = {"test1@example.com"}
-        fake_db.create_ml('ml-000010', "hoge", initial_members,
+        fake_db.create_ml("tenant1", 'ml-000010', "hoge", initial_members,
                           "test1@example.com")
         msg = 'From: Test1 <test1@example.com>\n' \
               'To: ml-000010 <ml-000010@testml.net>, ' \
@@ -791,7 +830,7 @@ class ProcessMessageWithAdminsTest(unittest.TestCase):
 
     def test_add_members_w_1_cc_i_admin(self):
         initial_members = {"test1@example.com"}
-        fake_db.create_ml('ml-000010', "hoge", initial_members,
+        fake_db.create_ml("tenant1", 'ml-000010', "hoge", initial_members,
                           "test1@example.com")
         msg = 'From: Test1 <test1@example.com>\n' \
               'To: ml-000010 <ml-000010@testml.net>\n' \
@@ -813,7 +852,7 @@ class ProcessMessageWithAdminsTest(unittest.TestCase):
 
     def test_add_members_w_2_ccs_i_admin(self):
         initial_members = {"test1@example.com"}
-        fake_db.create_ml('ml-000010', "hoge", initial_members,
+        fake_db.create_ml("tenant1", 'ml-000010', "hoge", initial_members,
                           "test1@example.com")
         msg = 'From: Test1 <test1@example.com>\n' \
               'To: ml-000010 <ml-000010@testml.net>\n' \
@@ -835,7 +874,7 @@ class ProcessMessageWithAdminsTest(unittest.TestCase):
 
     def test_add_members_w_2_tos_and_2_ccs_i_admins(self):
         initial_members = {"test1@example.com"}
-        fake_db.create_ml('ml-000010', "hoge", initial_members,
+        fake_db.create_ml("tenant1", 'ml-000010', "hoge", initial_members,
                           "test1@example.com")
         msg = 'From: Test1 <test1@example.com>\n' \
               'To: ml-000010 <ml-000010@testml.net>, ' \
@@ -858,7 +897,7 @@ class ProcessMessageWithAdminsTest(unittest.TestCase):
 
     def test_del_members_w_2_tos_i_admin(self):
         initial_members = {"test1@example.com"}
-        fake_db.create_ml('ml-000010', "hoge", initial_members,
+        fake_db.create_ml("tenant1", 'ml-000010', "hoge", initial_members,
                           "test1@example.com")
         msg = 'From: Test1 <test1@example.com>\n' \
               'To: ml-000010 <ml-000010@testml.net>, ' \
@@ -880,7 +919,7 @@ class ProcessMessageWithAdminsTest(unittest.TestCase):
 
     def test_del_members_w_1_cc_by_admin(self):
         initial_members = {"test1@example.com", "test3@example.com"}
-        fake_db.create_ml('ml-000010', "hoge", initial_members,
+        fake_db.create_ml("tenant1", 'ml-000010', "hoge", initial_members,
                           "test1@example.com")
         msg = 'From: Test2 <test2@example.com>\n' \
               'To: ml-000010 <ml-000010@testml.net>\n' \
@@ -902,7 +941,7 @@ class ProcessMessageWithAdminsTest(unittest.TestCase):
 
     def test_del_members_w_2_ccs_i_admin(self):
         initial_members = {"test1@example.com", "test3@example.com"}
-        fake_db.create_ml('ml-000010', "hoge", initial_members,
+        fake_db.create_ml("tenant1", 'ml-000010', "hoge", initial_members,
                           "test1@example.com")
         msg = 'From: Test1 <test1@example.com>\n' \
               'To: ml-000010 <ml-000010@testml.net>\n' \
@@ -924,7 +963,7 @@ class ProcessMessageWithAdminsTest(unittest.TestCase):
 
     def test_del_members_w_2_tos_and_2_ccs_i_admin(self):
         initial_members = {"test1@example.com", "test3@example.com"}
-        fake_db.create_ml('ml-000010', "hoge", initial_members,
+        fake_db.create_ml("tenant1", 'ml-000010', "hoge", initial_members,
                           "test1@example.com")
         msg = 'From: Test1 <test1@example.com>\n' \
               'To: ml-000010 <ml-000010@testml.net>, ' \
@@ -964,13 +1003,32 @@ class SendPostTest(unittest.TestCase):
             relay_port=1025,
             db_url="mongodb://localhost",
             db_name=self.db_name,
-            ml_name_format="ml-%06d",
-            new_ml_account="new",
-            domain="testml.net",
-            admin_file=None)
+            domain="testml.net")
+        self.tenant_name = "tenant1"
+        config = {
+            "admins": {"hoge"},
+            "charset": "iso-2022-jp",
+            "ml_name_format": "ml-%06d",
+            "new_ml_account": "new",
+            "days_to_close": 7,
+            "days_to_orphan": 7,
+            "welcome_msg": "welcome_msg",
+            "readme_msg": "readme_msg",
+            "remove_msg": "remove_msg",
+            "reopen_msg": "reopen_msg",
+            "goodbye_msg": "goodbye_msg",
+            "report_subject": "report_subject",
+            "report_msg": "report_msg",
+            "report_format": "report_format",
+            "orphaned_subject": "orphaned_subject",
+            "orphaned_msg": "orphaned_msg",
+            "closed_subject": "closed_subject",
+            "closed_msg": "closed_msg",
+        }
+        fake_db.create_tenant(self.tenant_name, "hoge", config)
 
     def tearDown(self):
-        pass
+        fake_db.clear_db()
 
     def _sendmail(self, _from, members, message):
         self.members = members
@@ -980,7 +1038,8 @@ class SendPostTest(unittest.TestCase):
     def test_no_cc(self):
         members = {"test1@example.com", "test2@example.com",
                    "test3@example.com", "test4@example.com"}
-        fake_db.create_ml('ml-000010', "hoge", members, "test1@example.com")
+        fake_db.create_ml("tenant1", 'ml-000010', "hoge", members,
+                          "test1@example.com")
         msg = 'From: Test1 <test1@example.com>\n' \
               'To: ml-000010 <ml-000010@testml.net>\n' \
               'Subject: test\n' \
@@ -1011,7 +1070,8 @@ class SendPostTest(unittest.TestCase):
     def test_2_ccs(self):
         members = {"test1@example.com", "test2@example.com",
                    "test3@example.com", "test4@example.com"}
-        fake_db.create_ml('ml-000010', "hoge", members, "test1@example.com")
+        fake_db.create_ml("tenant1", 'ml-000010', "hoge", members,
+                          "test1@example.com")
         msg = 'From: Test1 <test1@example.com>\n' \
               'To: ml-000010 <ml-000010@testml.net>\n' \
               'Cc: Test3 <test3@example.com>, Test4 <test4@example.com>\n' \
@@ -1045,7 +1105,8 @@ class SendPostTest(unittest.TestCase):
     def test_members(self):
         members = {"test1@example.com", "test2@example.com",
                    "test3@example.com", "test4@example.com"}
-        fake_db.create_ml('ml-000010', "hoge", members, "test1@example.com")
+        fake_db.create_ml("tenant1", 'ml-000010', "hoge", members,
+                          "test1@example.com")
         msg = 'From: Test1 <test1@example.com>\n' \
               'To: ml-000010 <ml-000010@testml.net>\n' \
               'Cc: Test3 <test3@example.com>, Test4 <test4@example.com>\n' \

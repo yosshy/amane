@@ -36,7 +36,7 @@ from tempml import db
 from tempml import log
 
 
-CONFIG_FILE = os.environ.get("TEMPML_CONFIG_FILE", "/etc/tempml/reviewer.conf")
+CONFIG_FILE = os.environ.get("TEMPML_CONFIG_FILE", "/etc/tempml/tempml.conf")
 ERROR_SUFFIX = '-error'
 REMOVE_RFC822 = re.compile("rfc822;", re.I)
 
@@ -57,20 +57,18 @@ def normalize(addresses):
 class Reviewer(object):
 
     def __init__(self, relay_host=None, relay_port=None, db_url=None,
-                 db_name=None, domain=None, new_ml_account=None, charset=None,
-                 admins=None, debug=False, **kwargs):
+                 db_name=None, domain=None, debug=False, **kwargs):
 
         self.relay_host = relay_host
         self.relay_port = relay_port
-        self.charset = charset
         self.at_domain = "@" + domain
         self.debug = debug
-        self.admins = normalize(admins)
-        self.new_ml_address = new_ml_account + self.at_domain
 
         db.init_db(db_url, db_name)
+        self.tenants = db.find_tenants({'status': const.TENANT_STATUS_ENABLED})
+        logging.debug("tenants: %s", self.tenants)
 
-    def notify(self, old_status, new_status, days, subject, template):
+    def notify(self, old_status, new_status):
         """
         Notify status change for ML members
 
@@ -78,33 +76,44 @@ class Reviewer(object):
         :type old_status: str
         :param new_status: New status
         :type new_status: str
-        :param days: Days to change the ML status
-        :type days: int
-        :param subject: Message subject
-        :type subject: str
-        :param template: Message template
-        :type template: str
+        :rtype: None
         """
-        updated_after = datetime.now() - timedelta(days=days, hours=-1)
-        mls = db.find_mls({'status': old_status,
-                           'updated': {'$lte': updated_after}},
-                          sortkey='updated', reverse=False)
 
-        for ml in mls:
-            try:
-                ml_name = ml['ml_name']
-                ml_address = ml_name + self.at_domain
-                members = db.get_members(ml_name)
-                params = dict(ml_name=ml_name, ml_address=ml_address,
-                              new_ml_address=self.new_ml_address,
-                              subject=ml['status'])
-                content = ""
-                content = template % params
-                content = content.replace("\r\n", "\n").replace("\n", "\r\n")
-                self.send_post(ml_name, subject, content, members)
-                db.change_ml_status(ml_name, new_status, "reviewer")
-            except:
-                pass
+        for config in self.tenants:
+            if new_status == const.STATUS_CLOSED:
+                tenant_name = config['tenant_name']
+                days = config['days_to_close']
+                subject = config['closed_subject']
+                template = config['closed_msg']
+            elif new_status == const.STATUS_ORPHANED:
+                days = config['days_to_orphan']
+                subject = config['orphaned_subject']
+                template = config['orphaned_msg']
+
+            updated_after = datetime.now() - timedelta(days=days, hours=-1)
+            logging.debug("updated_after: %s", updated_after)
+            mls = db.find_mls({'tenant_name': config['tenant_name'],
+                               'status': old_status,
+                               'updated': {'$lte': updated_after}},
+                              sortkey='updated', reverse=False)
+
+            for ml in mls:
+                try:
+                    ml_name = ml['ml_name']
+                    ml_address = ml_name + self.at_domain
+                    new_ml_address = config['new_ml_account'] + self.at_domain
+                    members = db.get_members(ml_name) | config['admins']
+                    params = dict(ml_name=ml_name, ml_address=ml_address,
+                                  new_ml_address=new_ml_address,
+                                  subject=ml['status'])
+                    content = template % params
+                    content = content.replace("\r\n", "\n").\
+                        replace("\n", "\r\n")
+                    self.send_post(ml_name, subject, content, members)
+                    db.change_ml_status(ml_name, new_status, "reviewer")
+                except:
+                    raise
+                    pass
 
     def send_post(self, ml_name, subject, content, members):
         """
@@ -171,12 +180,8 @@ def main():
     logging.debug("args: %s", opts.__dict__)
 
     reviewer = Reviewer(**opts.__dict__)
-    reviewer.notify(const.STATUS_ORPHANED, const.STATUS_CLOSED,
-                    config['days_to_close'], config['closed_subject'],
-                    config['closed_msg'])
-    reviewer.notify(const.STATUS_OPEN, const.STATUS_ORPHANED,
-                    config['days_to_orphan'], config['orphaned_subject'],
-                    config['orphaned_msg'])
+    reviewer.notify(const.STATUS_ORPHANED, const.STATUS_CLOSED)
+    reviewer.notify(const.STATUS_OPEN, const.STATUS_ORPHANED)
 
 
 if __name__ == '__main__':
