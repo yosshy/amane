@@ -125,7 +125,7 @@ TempML 設定ファイル (/etc/tempml/tempml.conf)
     report_subject: 問合せ一覧レポート
     report_format: |
       問合せID: %(ml_name)s\t題名: %(subject)s
-      作成日時: %(created)s\t最終更新日時: %(updated)s\t最終更新者: %(by)s"
+      作成日時: %(created)s\t最終更新日時: %(updated)s\t最終更新者: %(by)s
     report_msg: |
       本日の問合せ状況
     
@@ -146,11 +146,11 @@ TempML 設定ファイル (/etc/tempml/tempml.conf)
       %(closed)s
     orphaned_subject: 本問合せはもうすぐクローズされます
     orphaned_msg: |
-      ■■本メールは自動的に送信されています■■
+      本メールは自動的に送信されています。
       新規投稿が無い場合、問合せ %(ml_name)s は７日後に自動的にクローズされます。
     closed_subject: 本問合せはクローズされました
     closed_msg: |
-      ■■本メールは自動的に送信されています■■
+      本メールは自動的に送信されています。
       ７日間投稿が無かったため、問合せ %(ml_name)s はクローズされました。
       新規の問合せは %(new_ml_address)s 宛にお願い致します。
 
