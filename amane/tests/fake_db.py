@@ -22,7 +22,7 @@ from datetime import datetime
 import logging
 import time
 
-from tempml import const
+from amane import const
 
 
 DB = None

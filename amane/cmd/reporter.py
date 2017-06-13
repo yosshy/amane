@@ -30,13 +30,13 @@ import sys
 import yaml
 
 
-from tempml import const
-from tempml import db
-from tempml import log
+from amane import const
+from amane import db
+from amane import log
 
 
-CONFIG_FILE = os.environ.get("TEMPML_CONFIG_FILE", "/etc/tempml/tempml.conf")
-ERROR_RETURN = 'tempml-error'
+CONFIG_FILE = os.environ.get("AMANE_CONFIG_FILE", "/etc/amane/amane.conf")
+ERROR_RETURN = 'amane-error'
 
 
 def normalize(addresses):
@@ -143,7 +143,7 @@ def main():
     opts = parser.parse_args()
 
     if opts.version:
-        print(pbr.version.VersionInfo('tempml'))
+        print(pbr.version.VersionInfo('amane'))
         return 0
 
     log.setup(debug=opts.debug)

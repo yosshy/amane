@@ -14,7 +14,7 @@
 #    under the License.
 
 """
-Manager command
+Manager CLI
 """
 
 import click
@@ -27,13 +27,13 @@ import sys
 import yaml
 
 
-from tempml import const
-from tempml import db
-from tempml import log
+from amane import const
+from amane import db
+from amane import log
 
 
-CONFIG_FILE = "/etc/tempml/tempml.conf"
-ERROR_RETURN = 'tempml-error'
+CONFIG_FILE = "/etc/amane/amane.conf"
+ERROR_RETURN = 'amane-error'
 
 
 def normalize(addresses):
@@ -51,10 +51,10 @@ def normalize(addresses):
 
 @click.group()
 @click.option('--config-file', metavar='CONF',
-              envvar='TEMPML_CONFIG_FILE', type=click.File('r'),
+              envvar='AMANE_CONFIG_FILE', type=click.File('r'),
               help='Configuration File')
 @click.option('--debug', metavar='False',
-              envvar='TEMPML_DEBUG', is_flag=True,
+              envvar='AMANE_DEBUG', is_flag=True,
               help='Debug mode')
 @click.pass_context
 def cli(ctx, config_file, debug):

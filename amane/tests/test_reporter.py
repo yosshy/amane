@@ -14,7 +14,7 @@
 #    under the License.
 
 """
-Smoketests for statistics reporter (tempml.cmd.reporter)
+Smoketests for statistics reporter (amane.cmd.reporter)
 """
 
 from datetime import datetime
@@ -31,10 +31,10 @@ except:
     import mock
 import yaml
 
-import tempml
-from tempml.cmd import reporter
-from tempml import const
-from tempml.tests import fake_db
+import amane
+from amane.cmd import reporter
+from amane import const
+from amane.tests import fake_db
 
 
 DUMMY_ADMIN_FILE = join(dirname(__file__), "dummy_admin_file")
@@ -126,8 +126,8 @@ class ProcessMessageTest(unittest.TestCase):
                 self.data[key] = []
         print(self.body)
 
-    @mock.patch('tempml.cmd.reporter.db', fake_db)
-    @mock.patch('tempml.cmd.reporter.smtplib.SMTP', DummySMTPClient)
+    @mock.patch('amane.cmd.reporter.db', fake_db)
+    @mock.patch('amane.cmd.reporter.smtplib.SMTP', DummySMTPClient)
     def _test_report(self, new, _open, orphaned, closed):
         with mock.patch.object(DummySMTPClient, 'sendmail') as m:
             with mock.patch.object(fake_db, 'init_db') as m2:
@@ -147,13 +147,13 @@ class ProcessMessageTest(unittest.TestCase):
                 self.assertEqual([_['ml_name'] for _ in self.data['closed']],
                                  closed)
 
-    @mock.patch('tempml.cmd.reporter.db', fake_db)
-    @mock.patch('tempml.cmd.reporter.smtplib.SMTP', DummySMTPClient)
+    @mock.patch('amane.cmd.reporter.db', fake_db)
+    @mock.patch('amane.cmd.reporter.smtplib.SMTP', DummySMTPClient)
     def test_report_without_ml(self):
         self._test_report([], [], [], [])
 
-    @mock.patch('tempml.cmd.reporter.db', fake_db)
-    @mock.patch('tempml.cmd.reporter.smtplib.SMTP', DummySMTPClient)
+    @mock.patch('amane.cmd.reporter.db', fake_db)
+    @mock.patch('amane.cmd.reporter.smtplib.SMTP', DummySMTPClient)
     def test_report_with_a_new_ml(self):
         members = {"test1@example.com", "test2@example.com",
                    "test3@example.com", "test4@example.com"}
@@ -161,8 +161,8 @@ class ProcessMessageTest(unittest.TestCase):
                           "test1@example.com")
         self._test_report(['ml-000010'], [], [], [])
 
-    @mock.patch('tempml.cmd.reporter.db', fake_db)
-    @mock.patch('tempml.cmd.reporter.smtplib.SMTP', DummySMTPClient)
+    @mock.patch('amane.cmd.reporter.db', fake_db)
+    @mock.patch('amane.cmd.reporter.smtplib.SMTP', DummySMTPClient)
     def test_report_with_an_open_ml(self):
         members = {"test1@example.com", "test2@example.com",
                    "test3@example.com", "test4@example.com"}
@@ -172,8 +172,8 @@ class ProcessMessageTest(unittest.TestCase):
                                  "test2@example.com")
         self._test_report([], ['ml-000010'], [], [])
 
-    @mock.patch('tempml.cmd.reporter.db', fake_db)
-    @mock.patch('tempml.cmd.reporter.smtplib.SMTP', DummySMTPClient)
+    @mock.patch('amane.cmd.reporter.db', fake_db)
+    @mock.patch('amane.cmd.reporter.smtplib.SMTP', DummySMTPClient)
     def test_report_with_an_orphaned_ml(self):
         members = {"test1@example.com", "test2@example.com",
                    "test3@example.com", "test4@example.com"}
@@ -183,8 +183,8 @@ class ProcessMessageTest(unittest.TestCase):
                                  "test2@example.com")
         self._test_report([], [], ['ml-000010'], [])
 
-    @mock.patch('tempml.cmd.reporter.db', fake_db)
-    @mock.patch('tempml.cmd.reporter.smtplib.SMTP', DummySMTPClient)
+    @mock.patch('amane.cmd.reporter.db', fake_db)
+    @mock.patch('amane.cmd.reporter.smtplib.SMTP', DummySMTPClient)
     def test_report_with_a_closed_ml(self):
         members = {"test1@example.com", "test2@example.com",
                    "test3@example.com", "test4@example.com"}
@@ -194,8 +194,8 @@ class ProcessMessageTest(unittest.TestCase):
                                  "test2@example.com")
         self._test_report([], [], [], ['ml-000010'])
 
-    @mock.patch('tempml.cmd.reporter.db', fake_db)
-    @mock.patch('tempml.cmd.reporter.smtplib.SMTP', DummySMTPClient)
+    @mock.patch('amane.cmd.reporter.db', fake_db)
+    @mock.patch('amane.cmd.reporter.smtplib.SMTP', DummySMTPClient)
     def test_report_with_mls(self):
         members = {"test1@example.com", "test2@example.com",
                    "test3@example.com", "test4@example.com"}
