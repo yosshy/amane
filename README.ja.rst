@@ -52,7 +52,7 @@ Redmine と TempML の主な違い
 
 TempML には２つの設定ファイルが必要です。
 
-TempML 設定ファイル（/etc/tempml/tempml.conf）
+TempML 設定ファイル (/etc/tempml/tempml.conf)
 ---------------------------------------------
 
 同ファイルのサンプルは以下の通りです。YAML 形式で定義します。
@@ -75,7 +75,7 @@ TempML 設定ファイル（/etc/tempml/tempml.conf）
   ドレスとポート番号です。
 * log_file ... TempML の各種プログラムのログファイルへのフルパスです。
 * domain ... TempML smtpd が扱うメールアドレスの @ 以降です。上記の例で
-  は *@example.com 宛のメールを扱います。
+  は \*@example.com 宛のメールを扱います。
 
 テナント設定ファイル (tenant.conf)
 ----------------------------------

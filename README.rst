@@ -49,7 +49,7 @@ How to configure TempML
 
 TempML has 2 confiugration files.
 
-TempML confiugration file（/etc/tempml/tempml.conf）
+TempML confiugration file (/etc/tempml/tempml.conf)
 ---------------------------------------------------
 
 A YAML file like below::
