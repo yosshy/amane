@@ -66,18 +66,8 @@ class NotifyTest(unittest.TestCase):
         self.content_arg = None
         self.members_arg = None
 
-        from tempml.cmd import reviewer
-        self.reviewer = reviewer.Reviewer(
-            relay_host="localhost",
-            relay_port=1025,
-            db_url="mongodb://localhost",
-            db_name=self.db_name,
-            new_ml_account="new",
-            domain="testml.net",
-            admins=[])
-
     def tearDown(self):
-        pass
+        fake_db.clear_db()
 
     def _send_post(self, ml_name, subject, content, members):
         self.ml_name_arg = ml_name
@@ -85,25 +75,60 @@ class NotifyTest(unittest.TestCase):
         self.content_arg = content
         self.members_arg = members
 
+    @mock.patch('tempml.db', fake_db)
+    @mock.patch('smtpd.SMTPServer', DummySMTPServer)
     def _test(self, old_status, new_status, days, altered):
-        initial_members = {"test1@example.com", "test2@example.com",
-                           "test3@example.com", "test4@example.com"}
-        fake_db.create_ml('ml-000010', "hoge", initial_members,
+        self.tenant_name = "tenant1"
+        config = {
+            "admins": set(),
+            "charset": "iso-2022-jp",
+            "ml_name_format": "ml-%06d",
+            "new_ml_account": "new",
+            "days_to_close": days,
+            "days_to_orphan": days,
+            "welcome_msg": "welcome_msg",
+            "readme_msg": "readme_msg",
+            "remove_msg": "remove_msg",
+            "reopen_msg": "reopen_msg",
+            "goodbye_msg": "goodbye_msg",
+            "report_subject": "report_subject",
+            "report_msg": "report_msg",
+            "report_format": "report_format",
+            "orphaned_subject": "orphaned_subject",
+            "orphaned_msg": "orphaned_msg",
+            "closed_subject": "closed_subject",
+            "closed_msg": "closed_msg",
+        }
+        fake_db.create_tenant(self.tenant_name, "hoge", config)
+
+        members = {"test1@example.com", "test2@example.com",
+                   "test3@example.com", "test4@example.com"}
+        fake_db.create_ml(self.tenant_name, 'ml-000010', "hoge", members,
                           "test1@example.com")
+
         if old_status:
             fake_db.change_ml_status('ml-000010', old_status, "xxx")
+
+        from tempml.cmd import reviewer
+        self.reviewer = reviewer.Reviewer(
+            relay_host="localhost",
+            relay_port=1025,
+            db_url="mongodb://localhost",
+            db_name=self.db_name,
+            domain="testml.net")
+
         with mock.patch.object(self.reviewer, 'send_post') as m:
             m.side_effect = self._send_post
             self.reviewer.notify(
-                const.STATUS_ORPHANED, const.STATUS_CLOSED, days, "closed", "")
+                const.STATUS_ORPHANED, const.STATUS_CLOSED)
             self.reviewer.notify(
-                const.STATUS_OPEN, const.STATUS_ORPHANED, days, "orphaned", "")
+                const.STATUS_OPEN, const.STATUS_ORPHANED)
             ret = fake_db.get_ml('ml-000010')
             self.assertEqual(ret['status'], new_status)
             if altered:
                 self.assertEqual(m.call_count, 1)
                 self.assertEqual(self.ml_name_arg, 'ml-000010')
-                self.assertEqual(self.members_arg, initial_members)
+                self.assertEqual(self.members_arg, members)
             else:
                 self.assertEqual(m.call_count, 0)
 
