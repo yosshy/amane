@@ -1,6 +1,6 @@
-============
-python-amane
-============
+=====
+Amane
+=====
 
 Amane は簡易メーリングリストマネージャーです。基本的なアイデアは
 QuickML (https://github.com/masui/QuickML )を参考にしていますが、全く

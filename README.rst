@@ -1,6 +1,6 @@
-============
-python-amane
-============
+=====
+Amane
+=====
 
 Amane is an instant mailing list manager. Its basic idea has come from
 QuickML (https://github.com/masui/QuickML) but it's not the same.
@@ -49,7 +49,7 @@ How to configure Amane
 
 Amane has 2 confiugration files.
 
-Amane confiugration file (/etc/amane/amane.conf)
+Amane Confiugration File (/etc/amane/amane.conf)
 ------------------------------------------------
 
 A YAML file like below::
@@ -72,7 +72,7 @@ A YAML file like below::
 * domain ... Domain name of the mail addresses amane_smtpd will
   handle
 
-Tenant confiugration file
+Tenant Confiugration File
 -------------------------
 
 A YAML file like below::
