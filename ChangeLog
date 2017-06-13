@@ -1,6 +1,21 @@
 CHANGES
 =======
 
+* README: updated
+* Revert "const: added SMTP\_STATUS\_NOT\_TEXT\_MESSAGE"
+* smtpd: added ensure\_multipart()
+* smtpd: reject non-text messages
+* const: added SMTP\_STATUS\_NOT\_TEXT\_MESSAGE
+* ctl: created
+* sample: modified for multi-tenancy
+* Support multi-tenancy
+* reviewer: removed members from notifications
+* requirements: updated
+
+0.6
+---
+
+* ChangeLog: updated
 * reviewer: created
 * smtpd, reporter: added STATUS\_NEW
 * smtpd: updated sample config file
