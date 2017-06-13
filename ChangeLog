@@ -1,6 +1,15 @@
 CHANGES
 =======
 
+0.7.1
+-----
+
+* README: updated
+
+0.7
+---
+
+* ChangeLog: updated
 * README: updated
 * Revert "const: added SMTP\_STATUS\_NOT\_TEXT\_MESSAGE"
 * smtpd: added ensure\_multipart()
