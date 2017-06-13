@@ -1,40 +1,40 @@
-=============
-python-tempml
-=============
+============
+python-amane
+============
 
-TempML は「Temporary Mailing List Manager」の意味です。基本的なアイデア
-は QuickML (https://github.com/masui/QuickML )を参考にしていますが、全
-く同じではありません。QuickML は汎用的な簡易 ML 管理システムですが、
-TempML は元々メール問合せ管理システムとして開発されました。ですので、
-TempML は Redmine のようなチケット管理システムに近いです。以下はそれぞ
+Amane は簡易メーリングリストマネージャーです。基本的なアイデアは
+QuickML (https://github.com/masui/QuickML )を参考にしていますが、全く
+同じではありません。QuickML は汎用的な簡易 ML 管理システムですが、
+Amane は元々メール問合せ管理システムとして開発されました。ですので、
+Amane は Redmine のようなチケット管理システムに近いです。以下はそれぞ
 れの違いです。
 
-QuickML と TempML 主な違い
---------------------------
+QuickML と Amane 主な違い
+-------------------------
 
 * ML作成時のメール送信先が異なります。
 
   * QuickML：最初に指定した任意のメールアカウント(@の前)をその後も使い
     ます。
-  * TempML：ML作成専用のメールアカウント宛にメールを送ると、新規のIDで
+  * Amane：ML作成専用のメールアカウント宛にメールを送ると、新規のIDで
     メールアカウントが作成され、以後そのアドレスでやり取りが行われます。
 
-* TempML はデフォルトでメンバー登録されるスタッフメンバーを定義できます。
+* Amane はデフォルトでメンバー登録されるスタッフメンバーを定義できます。
   スタッフメンバーはメール操作によるメンバー削除の対象外になります。
-* TempML はマルチテナンシをサポートしています。テナント毎に、ML作成用メー
+* Amane はマルチテナンシをサポートしています。テナント毎に、ML作成用メー
   ルアカウント、サブジェクトのMLプレフィクス（[ml-00001]等）、スタッフ
   メンバー、クローズ予告／クローズ猶予等を定義できます。
-* TempML は添付ファイルでシステムメッセージを付与します。システムメッセー
+* Amane は添付ファイルでシステムメッセージを付与します。システムメッセー
   ジには ML の基本的な使い方と ML 登録メンバー一覧が含まれます。
 
-Redmine と TempML の主な違い
-----------------------------
+Redmine と Amane の主な違い
+---------------------------
 
-* Redmine は基本的に Web ベースですが、TempML はメールベースです。
-* Redmine はチケットの状態をユーザがカスタマイズ出来ますが、TempML では
+* Redmine は基本的に Web ベースですが、Amane はメールベースです。
+* Redmine はチケットの状態をユーザがカスタマイズ出来ますが、Amane では
   出来ません。
-* Redmine はチケットの重要度を定義できますが、TempML では出来ません。
-* Redmine はチケット状態のワークフローを定義出来ますが、TempML では出来
+* Redmine はチケットの重要度を定義できますが、Amane では出来ません。
+* Redmine はチケット状態のワークフローを定義出来ますが、Amane では出来
   ません。
 
 インストール方法
@@ -45,40 +45,40 @@ Redmine と TempML の主な違い
 ::
 
     # yum install mongodb-server
-    # pip install tempml
+    # pip install amane
 
 設定方法
 ========
 
-TempML には２つの設定ファイルが必要です。
+Amane には２つの設定ファイルが必要です。
 
-TempML 設定ファイル (/etc/tempml/tempml.conf)
----------------------------------------------
+Amane 設定ファイル (/etc/amane/amane.conf)
+------------------------------------------
 
 同ファイルのサンプルは以下の通りです。YAML 形式で定義します。
 
 ::
 
-    db_name: tempml
+    db_name: amane
     db_url: mongodb://localhost/
     relay_host: localhost
     relay_port: 25
     listen_address: 192.168.0.1
     listen_port: 25
-    log_file: /var/log/tempml.log
+    log_file: /var/log/amane.log
     domain: example.com
 
 * db_url, db_name ... MongoDB の URI と DB 名です。
 * relay_host, relay_port ... メール送信に使用する外部 SMTP サーバの IP
   アドレスとポート番号です。
-* listen_address, listen_port ... TempML の smtpd がリッスンする IP ア
+* listen_address, listen_port ... Amane の smtpd がリッスンする IP ア
   ドレスとポート番号です。
-* log_file ... TempML の各種プログラムのログファイルへのフルパスです。
-* domain ... TempML smtpd が扱うメールアドレスの @ 以降です。上記の例で
+* log_file ... Amane の各種プログラムのログファイルへのフルパスです。
+* domain ... Amane smtpd が扱うメールアドレスの @ 以降です。上記の例で
   は \*@example.com 宛のメールを扱います。
 
-テナント設定ファイル (tenant.conf)
-----------------------------------
+テナント設定ファイル
+-------------------
 
 同ファイルのサンプルは以下の通りです。YAML 形式で定義します。
 
@@ -185,28 +185,28 @@ TempML 設定ファイル (/etc/tempml/tempml.conf)
 * closed_subject, closed_msg ... 自動的に ML が closed にされる際に送信
   されるメールのサブジェクトと本文テンプレートです。
 
-設定ファイルを作成したら、tempmlctl コマンドで DB に登録します。
+設定ファイルを作成したら、amanectl コマンドで DB に登録します。
 
 ::
 
-    $ tempmlctl tenant create <テナント名> --yamlfile <テナント設定ファイル>
+    $ amanectl tenant create <テナント名> --yamlfile <テナント設定ファイル>
 
 テナント情報に修正がある場合は以下のいずれかを行います。
 
-(1) テナント設定ファイルを更新して tempmlctl コマンドを実行する場合::
+(1) テナント設定ファイルを更新して amanectl コマンドを実行する場合::
 
-    $ tempmlctl tenant update <テナント名> --yamlfile <テナント設定ファイル>
+    $ amanectl tenant update <テナント名> --yamlfile <テナント設定ファイル>
 
-(2) 修正部分のオプションを指定して tempmlctl コマン>ドを実行する場合::
+(2) 修正部分のオプションを指定して amanectl コマン>ドを実行する場合::
 
-    $ tempmlctl tenant update <テナント名> <修正オプション> <新しい設定値> [<修正オプション> <新しい設定値> ...]
+    $ amanectl tenant update <テナント名> <修正オプション> <新しい設定値> [<修正オプション> <新しい設定値> ...]
 
 
 サービス開始方法
 ================
 
-以下のコマンドで tempml_smtpd を実行して下さい。
+以下のコマンドで amane_smtpd を実行して下さい。
 
 ::
 
-    # tempml_smtpd &
+    # amane_smtpd &

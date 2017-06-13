@@ -14,7 +14,7 @@
 #    under the License.
 
 """
-SMTP Handler; The Mailing List Manager
+Reviewer; changes non-used ML status
 """
 
 import argparse
@@ -31,12 +31,12 @@ import smtplib
 import sys
 import yaml
 
-from tempml import const
-from tempml import db
-from tempml import log
+from amane import const
+from amane import db
+from amane import log
 
 
-CONFIG_FILE = os.environ.get("TEMPML_CONFIG_FILE", "/etc/tempml/tempml.conf")
+CONFIG_FILE = os.environ.get("AMANE_CONFIG_FILE", "/etc/amane/amane.conf")
 ERROR_SUFFIX = '-error'
 REMOVE_RFC822 = re.compile("rfc822;", re.I)
 
@@ -169,7 +169,7 @@ def main():
     opts = parser.parse_args()
 
     if opts.version:
-        print(pbr.version.VersionInfo('tempml'))
+        print(pbr.version.VersionInfo('amane'))
         return 0
 
     config = yaml.load(opts.config_file)

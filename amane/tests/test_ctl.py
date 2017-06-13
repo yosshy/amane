@@ -14,7 +14,7 @@
 #    under the License.
 
 """
-Smoketests for reviewer (tempml.cmd.reviewer)
+Smoketests for reviewer (amane.cmd.reviewer)
 """
 
 import click
@@ -31,9 +31,9 @@ import unittest
 from unittest import mock
 import yaml
 
-from tempml import const
-from tempml.tests import fake_db
-from tempml import log
+from amane import const
+from amane.tests import fake_db
+from amane import log
 
 
 log.setup(debug=True)
@@ -64,9 +64,9 @@ class DummySMTPClient(object):
 class NotifyTest(unittest.TestCase):
     """notify() tests"""
 
-    @mock.patch('tempml.db', fake_db)
+    @mock.patch('amane.db', fake_db)
     def setUp(self):
-        from tempml.cmd import ctl
+        from amane.cmd import ctl
         self.ctl = ctl
         self.tester = lambda *x: CliRunner().invoke(self.ctl.cli, x)
         self.db_name = "test%04d" % random.randint(0, 1000)
@@ -104,7 +104,7 @@ class NotifyTest(unittest.TestCase):
                  db_name=self.db_name, db_url="mongodb://localhost/",
                  relay_host="localhost", relay_port=25,
                  listen_address="192.168.0.1", listen_port=25,
-                 log_file="/var/log/tempml.log", domain="example.com"),
+                 log_file="/var/log/amane.log", domain="example.com"),
             debug=False)
 
     def tearDown(self):
@@ -112,13 +112,13 @@ class NotifyTest(unittest.TestCase):
 
     def test_list_tenant(self):
         result = self.tester(
-            "--config-file", "sample/tempml.conf", "tenant", "list")
+            "--config-file", "sample/amane.conf", "tenant", "list")
         self.assertEqual(result.exit_code, 0)
         self.assertTrue(result.output.startswith(self.tenant_name))
 
     def test_show_tenant(self):
         result = self.tester(
-            "--config-file", "sample/tempml.conf", "tenant", "show",
+            "--config-file", "sample/amane.conf", "tenant", "show",
             self.tenant_name)
         self.assertEqual(result.exit_code, 0)
         config = yaml.load(result.output)
@@ -127,7 +127,7 @@ class NotifyTest(unittest.TestCase):
 
     def test_update_tenant(self):
         result = self.tester(
-            "--config-file", "sample/tempml.conf", "tenant", "update",
+            "--config-file", "sample/amane.conf", "tenant", "update",
             "--days-to-orphan", "14",
             self.tenant_name)
         self.assertEqual(result.output, "")
@@ -137,7 +137,7 @@ class NotifyTest(unittest.TestCase):
 
     def test_delete_tenant(self):
         result = self.tester(
-            "--config-file", "sample/tempml.conf", "tenant", "delete",
+            "--config-file", "sample/amane.conf", "tenant", "delete",
             self.tenant_name)
         self.assertEqual(result.exit_code, 0)
 
@@ -147,7 +147,7 @@ class NotifyTest(unittest.TestCase):
             logging.debug("TempFile: %s", t.name)
             yaml.dump(self.config, t)
             result = self.tester(
-                "--config-file", "sample/tempml.conf", "tenant", "create",
+                "--config-file", "sample/amane.conf", "tenant", "create",
                 self.tenant_name, "--yamlfile", t.name)
         self.assertEqual(result.exit_code, 0)
         self.assertEqual(result.output, "")
@@ -182,7 +182,7 @@ class NotifyTest(unittest.TestCase):
             t7.seek(0)
             t8.seek(0)
             result = self.tester(
-                "--config-file", "sample/tempml.conf", "tenant", "create",
+                "--config-file", "sample/amane.conf", "tenant", "create",
                 self.tenant_name,
                 "--admin", "hoge",
                 "--charset", self.config["charset"],

@@ -34,12 +34,12 @@ import smtplib
 import sys
 import yaml
 
-from tempml import const
-from tempml import db
-from tempml import log
+from amane import const
+from amane import db
+from amane import log
 
 
-CONFIG_FILE = os.environ.get("TEMPML_CONFIG_FILE", "/etc/tempml/tempml.conf")
+CONFIG_FILE = os.environ.get("AMANE_CONFIG_FILE", "/etc/amane/amane.conf")
 ERROR_SUFFIX = '-error'
 REMOVE_RFC822 = re.compile("rfc822;", re.I)
 
@@ -77,7 +77,7 @@ def ensure_multipart(message, default_charset):
     return _message
 
 
-class TempMlSMTPServer(smtpd.SMTPServer):
+class AmaneSMTPServer(smtpd.SMTPServer):
 
     def __init__(self, listen_address=None, listen_port=None, relay_host=None,
                  relay_port=None, db_url=None, db_name=None, domain=None,
@@ -316,7 +316,7 @@ def main():
     opts = parser.parse_args()
 
     if opts.version:
-        print(pbr.version.VersionInfo('tempml'))
+        print(pbr.version.VersionInfo('amane'))
         return 0
 
     config = yaml.load(opts.config_file)
@@ -326,7 +326,7 @@ def main():
     log.setup(filename=opts.log_file, debug=opts.debug)
     logging.debug("args: %s", opts.__dict__)
 
-    server = TempMlSMTPServer(**opts.__dict__)
+    server = AmaneSMTPServer(**opts.__dict__)
     asyncore.loop()
 
 

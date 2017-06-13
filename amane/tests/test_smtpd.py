@@ -14,7 +14,7 @@
 #    under the License.
 
 """
-Smoketests for SMTP handler (tempml.cmd.smtpd)
+Smoketests for SMTP handler (amane.cmd.smtpd)
 """
 
 from datetime import datetime
@@ -29,9 +29,9 @@ try:
 except:
     import mock
 
-import tempml
-from tempml import const
-from tempml.tests import fake_db
+import amane
+from amane import const
+from amane.tests import fake_db
 
 
 ML_NAME = "test-%06d"
@@ -59,22 +59,22 @@ class DummySMTPClient(object):
 class ProcessMessageTest(unittest.TestCase):
     """process_message() tests"""
 
-    @mock.patch('tempml.db', fake_db)
+    @mock.patch('amane.db', fake_db)
     @mock.patch('smtpd.SMTPServer', DummySMTPServer)
     def setUp(self):
         self.db_name = "test%04d" % random.randint(0, 1000)
         self.ml_name_arg = None
         self.message_arg = None
 
-        from tempml.cmd import smtpd
-        self.handler = smtpd.TempMlSMTPServer(
+        from amane.cmd import smtpd
+        self.handler = smtpd.AmaneSMTPServer(
             listen_address="127.0.0.1",
             listen_port=25,
             relay_host="localhost",
             relay_port=1025,
             db_url="mongodb://localhost",
             db_name=self.db_name,
-            domain="testml.net")
+            domain="example.net")
 
         self.tenant_name = "tenant1"
         config = {
@@ -141,7 +141,7 @@ class ProcessMessageTest(unittest.TestCase):
 
     def test_create_ml(self):
         msg = 'From: Test1 <test1@example.com>\n' \
-              'To: New mail <new@testml.net>\n' \
+              'To: New mail <new@example.net>\n' \
               'Subject: Test message\n' \
               '\n' \
               'Test mail\n'
@@ -152,7 +152,7 @@ class ProcessMessageTest(unittest.TestCase):
             self.handler.process_message(
                 ("127.0.0.2", 1000),
                 "test1@example.com",
-                ["new@tempml.net"],
+                ["new@amane.net"],
                 msg)
             self.assertEqual(self.ml_name_arg, 'ml-000001')
             self.assertEqual(fake_db.get_members('ml-000001'), final_members)
@@ -161,7 +161,7 @@ class ProcessMessageTest(unittest.TestCase):
 
     def test_create_ml_w_2_tos(self):
         msg = 'From: Test1 <test1@example.com>\n' \
-              'To: New mail <new@testml.net>, Test2 <test2@example.com>\n' \
+              'To: New mail <new@example.net>, Test2 <test2@example.com>\n' \
               'Subject: Test message\n' \
               '\n' \
               'Test mail\n'
@@ -172,14 +172,14 @@ class ProcessMessageTest(unittest.TestCase):
             self.handler.process_message(
                 ("127.0.0.2", 1000),
                 "test1@example.com",
-                ["new@tempml.net", "test2@example.com"],
+                ["new@amane.net", "test2@example.com"],
                 msg)
             self.assertEqual(self.ml_name_arg, 'ml-000001')
             self.assertEqual(fake_db.get_members('ml-000001'), final_members)
 
     def test_create_ml_w_1_cc(self):
         msg = 'From: Test1 <test1@example.com>\n' \
-              'To: New mail <new@testml.net>\n' \
+              'To: New mail <new@example.net>\n' \
               'Cc: Test3 <test3@example.com>\n' \
               'Subject: Test message\n' \
               '\n' \
@@ -191,14 +191,14 @@ class ProcessMessageTest(unittest.TestCase):
             self.handler.process_message(
                 ("127.0.0.2", 1000),
                 "test1@example.com",
-                ["new@tempml.net"],
+                ["new@amane.net"],
                 msg)
             self.assertEqual(self.ml_name_arg, 'ml-000001')
             self.assertEqual(fake_db.get_members('ml-000001'), final_members)
 
     def test_create_ml_w_2_ccs(self):
         msg = 'From: Test1 <test1@example.com>\n' \
-              'To: New mail <new@testml.net>\n' \
+              'To: New mail <new@example.net>\n' \
               'Cc: Test3 <test3@example.com>, Test4 <test4@example.com>\n' \
               'Subject: Test message\n' \
               '\n' \
@@ -211,14 +211,14 @@ class ProcessMessageTest(unittest.TestCase):
             self.handler.process_message(
                 ("127.0.0.2", 1000),
                 "test1@example.com",
-                ["new@tempml.net"],
+                ["new@amane.net"],
                 msg)
             self.assertEqual(self.ml_name_arg, 'ml-000001')
             self.assertEqual(fake_db.get_members('ml-000001'), final_members)
 
     def test_create_ml_w_2_tos_and_2_ccs(self):
         msg = 'From: Test1 <test1@example.com>\n' \
-              'To: New mail <new@testml.net>, Test2 <test2@example.com>\n' \
+              'To: New mail <new@example.net>, Test2 <test2@example.com>\n' \
               'Cc: Test3 <test3@example.com>, Test4 <test4@example.com>\n' \
               'Subject: Test message\n' \
               '\n' \
@@ -231,7 +231,7 @@ class ProcessMessageTest(unittest.TestCase):
             self.handler.process_message(
                 ("127.0.0.2", 1000),
                 "test1@example.com",
-                ["new@tempml.net", "test2@example.com"],
+                ["new@amane.net", "test2@example.com"],
                 msg)
             self.assertEqual(self.ml_name_arg, 'ml-000001')
             self.assertEqual(fake_db.get_members('ml-000001'), final_members)
@@ -243,7 +243,7 @@ class ProcessMessageTest(unittest.TestCase):
                           "test1@example.com")
 
         msg = 'From: Test2 <test2@example.com>\n' \
-              'To: ml-000010 <ml-000010@testml.net>\n' \
+              'To: ml-000010 <ml-000010@example.net>\n' \
               'Subject: Test message\n' \
               '\n' \
               'Test mail\n'
@@ -253,7 +253,7 @@ class ProcessMessageTest(unittest.TestCase):
             ret = self.handler.process_message(
                 ("127.0.0.2", 1000),
                 "test2@example.com",
-                ["ml-000010@tempml.net"],
+                ["ml-000010@amane.net"],
                 msg)
             self.assertEqual(ret, const.SMTP_STATUS_NOT_MEMBER)
 
@@ -262,7 +262,7 @@ class ProcessMessageTest(unittest.TestCase):
         fake_db.create_ml("tenant1", 'ml-000010', "hoge", initial_members,
                           "test1@example.com")
         msg = 'From: Test1 <test1@example.com>\n' \
-              'To: ml-000010 <ml-000010@testml.net>, ' \
+              'To: ml-000010 <ml-000010@example.net>, ' \
               'Test2 <test2@example.com>\n' \
               'Subject: Test message\n' \
               '\n' \
@@ -274,7 +274,7 @@ class ProcessMessageTest(unittest.TestCase):
             self.handler.process_message(
                 ("127.0.0.2", 1000),
                 "test1@example.com",
-                ["ml-000010@tempml.net"],
+                ["ml-000010@amane.net"],
                 msg)
             self.assertEqual(self.ml_name_arg, 'ml-000010')
             self.assertEqual(fake_db.get_members('ml-000010'), final_members)
@@ -284,7 +284,7 @@ class ProcessMessageTest(unittest.TestCase):
         fake_db.create_ml("tenant1", 'ml-000010', "hoge", initial_members,
                           "test1@example.com")
         msg = 'From: Test1 <test1@example.com>\n' \
-              'To: ml-000010 <ml-000010@testml.net>\n' \
+              'To: ml-000010 <ml-000010@example.net>\n' \
               'Cc: Test3 <test3@example.com>\n' \
               'Subject: Test message\n' \
               '\n' \
@@ -296,7 +296,7 @@ class ProcessMessageTest(unittest.TestCase):
             self.handler.process_message(
                 ("127.0.0.2", 1000),
                 "test1@example.com",
-                ["ml-000010@tempml.net"],
+                ["ml-000010@amane.net"],
                 msg)
             self.assertEqual(self.ml_name_arg, 'ml-000010')
             self.assertEqual(fake_db.get_members('ml-000010'), final_members)
@@ -306,7 +306,7 @@ class ProcessMessageTest(unittest.TestCase):
         fake_db.create_ml("tenant1", 'ml-000010', "hoge", initial_members,
                           "test1@example.com")
         msg = 'From: Test1 <test1@example.com>\n' \
-              'To: ml-000010 <ml-000010@testml.net>\n' \
+              'To: ml-000010 <ml-000010@example.net>\n' \
               'Cc: Test3 <test3@example.com>, Test4 <test4@example.com>\n' \
               'Subject: Test message\n' \
               '\n' \
@@ -319,7 +319,7 @@ class ProcessMessageTest(unittest.TestCase):
             self.handler.process_message(
                 ("127.0.0.2", 1000),
                 "test1@example.com",
-                ["ml-000010@tempml.net"],
+                ["ml-000010@amane.net"],
                 msg)
             self.assertEqual(self.ml_name_arg, 'ml-000010')
             self.assertEqual(fake_db.get_members('ml-000010'), final_members)
@@ -329,7 +329,7 @@ class ProcessMessageTest(unittest.TestCase):
         fake_db.create_ml("tenant1", 'ml-000010', "hoge", initial_members,
                           "test1@example.com")
         msg = 'From: Test1 <test1@example.com>\n' \
-              'To: ml-000010 <ml-000010@testml.net>, ' \
+              'To: ml-000010 <ml-000010@example.net>, ' \
               'Test2 <test2@example.com>\n' \
               'Cc: Test3 <test3@example.com>, Test4 <test4@example.com>\n' \
               'Subject: Test message\n' \
@@ -343,7 +343,7 @@ class ProcessMessageTest(unittest.TestCase):
             self.handler.process_message(
                 ("127.0.0.2", 1000),
                 "test1@example.com",
-                ["ml-000010@tempml.net"],
+                ["ml-000010@amane.net"],
                 msg)
             self.assertEqual(self.ml_name_arg, 'ml-000010')
             self.assertEqual(fake_db.get_members('ml-000010'), final_members)
@@ -353,7 +353,7 @@ class ProcessMessageTest(unittest.TestCase):
         fake_db.create_ml("tenant1", 'ml-000010', "hoge", initial_members,
                           "test1@example.com")
         msg = 'From: Test1 <test1@example.com>\n' \
-              'To: ml-000010 <ml-000010@testml.net>, ' \
+              'To: ml-000010 <ml-000010@example.net>, ' \
               'Test2 <test2@example.com>\n' \
               'Subject: \n' \
               '\n' \
@@ -365,7 +365,7 @@ class ProcessMessageTest(unittest.TestCase):
             self.handler.process_message(
                 ("127.0.0.2", 1000),
                 "test1@example.com",
-                ["ml-000010@tempml.net"],
+                ["ml-000010@amane.net"],
                 msg)
             self.assertEqual(m.call_count, 0)
             self.assertEqual(fake_db.get_members('ml-000010'), final_members)
@@ -375,7 +375,7 @@ class ProcessMessageTest(unittest.TestCase):
         fake_db.create_ml("tenant1", 'ml-000010', "hoge", initial_members,
                           "test1@example.com")
         msg = 'From: Test1 <test1@example.com>\n' \
-              'To: ml-000010 <ml-000010@testml.net>\n' \
+              'To: ml-000010 <ml-000010@example.net>\n' \
               'Cc: Test3 <test3@example.com>\n' \
               'Subject: \n' \
               '\n' \
@@ -387,7 +387,7 @@ class ProcessMessageTest(unittest.TestCase):
             self.handler.process_message(
                 ("127.0.0.2", 1000),
                 "test1@example.com",
-                ["ml-000010@tempml.net"],
+                ["ml-000010@amane.net"],
                 msg)
             self.assertEqual(self.ml_name_arg, 'ml-000010')
             self.assertEqual(fake_db.get_members('ml-000010'), final_members)
@@ -398,7 +398,7 @@ class ProcessMessageTest(unittest.TestCase):
         fake_db.create_ml("tenant1", 'ml-000010', "hoge", initial_members,
                           "test1@example.com")
         msg = 'From: Test1 <test1@example.com>\n' \
-              'To: ml-000010 <ml-000010@testml.net>\n' \
+              'To: ml-000010 <ml-000010@example.net>\n' \
               'Cc: Test3 <test3@example.com>, Test4 <test4@example.com>\n' \
               'Subject: \n' \
               '\n' \
@@ -410,7 +410,7 @@ class ProcessMessageTest(unittest.TestCase):
             self.handler.process_message(
                 ("127.0.0.2", 1000),
                 "test1@example.com",
-                ["ml-000010@tempml.net"],
+                ["ml-000010@amane.net"],
                 msg)
             self.assertEqual(self.ml_name_arg, 'ml-000010')
             self.assertEqual(fake_db.get_members('ml-000010'), final_members)
@@ -421,7 +421,7 @@ class ProcessMessageTest(unittest.TestCase):
         fake_db.create_ml("tenant1", 'ml-000010', "hoge", initial_members,
                           "test1@example.com")
         msg = 'From: Test1 <test1@example.com>\n' \
-              'To: ml-000010 <ml-000010@testml.net>, ' \
+              'To: ml-000010 <ml-000010@example.net>, ' \
               'Test2 <test2@example.com>\n' \
               'Cc: Test3 <test3@example.com>, Test4 <test4@example.com>\n' \
               'Subject: \n' \
@@ -434,7 +434,7 @@ class ProcessMessageTest(unittest.TestCase):
             self.handler.process_message(
                 ("127.0.0.2", 1000),
                 "test1@example.com",
-                ["ml-000010@tempml.net"],
+                ["ml-000010@amane.net"],
                 msg)
             self.assertEqual(self.ml_name_arg, 'ml-000010')
             self.assertEqual(fake_db.get_members('ml-000010'), final_members)
@@ -445,7 +445,7 @@ class ProcessMessageTest(unittest.TestCase):
         fake_db.create_ml("tenant1", 'ml-000010', "hoge", initial_members,
                           "test1@example.com")
         msg = 'From: MAILER-DAEMON <daemon@example.com>\n' \
-              'To: ml-000010-error <ml-000010-error@testml.net>\n' \
+              'To: ml-000010-error <ml-000010-error@example.net>\n' \
               'Original-Recipient: rfc822;test2@example.com\n' \
               'Subject: Error\n' \
               '\n' \
@@ -458,7 +458,7 @@ class ProcessMessageTest(unittest.TestCase):
             self.handler.process_message(
                 ("127.0.0.2", 1000),
                 "test1@example.com",
-                ["ml-000010@tempml.net"],
+                ["ml-000010@amane.net"],
                 msg)
             self.assertEqual(m.call_count, 0)
             self.assertEqual(fake_db.get_members('ml-000010'), final_members)
@@ -469,7 +469,7 @@ class ProcessMessageTest(unittest.TestCase):
         fake_db.create_ml("tenant1", 'ml-000010', "hoge", initial_members,
                           "test1@example.com")
         msg = 'From: Test1 <test1@example.com>\n' \
-              'To: ml-000010 <ml-000010@testml.net>, ' \
+              'To: ml-000010 <ml-000010@example.net>, ' \
               'Test2 <test2@example.com>\n' \
               'Subject: CLOSE\n' \
               '\n' \
@@ -482,7 +482,7 @@ class ProcessMessageTest(unittest.TestCase):
             self.handler.process_message(
                 ("127.0.0.2", 1000),
                 "test1@example.com",
-                ["ml-000010@tempml.net"],
+                ["ml-000010@amane.net"],
                 msg)
             self.assertEqual(self.ml_name_arg, 'ml-000010')
             self.assertEqual(fake_db.get_members('ml-000010'), final_members)
@@ -497,7 +497,7 @@ class ProcessMessageTest(unittest.TestCase):
         fake_db.change_ml_status('ml-000010', const.STATUS_CLOSED,
                                  "test2@example.com")
         msg = 'From: Test1 <test1@example.com>\n' \
-              'To: ml-000010 <ml-000010@testml.net>, ' \
+              'To: ml-000010 <ml-000010@example.net>, ' \
               'Test2 <test2@example.com>\n' \
               'Subject: Test\n' \
               '\n' \
@@ -510,7 +510,7 @@ class ProcessMessageTest(unittest.TestCase):
             ret = self.handler.process_message(
                 ("127.0.0.2", 1000),
                 "test1@example.com",
-                ["ml-000010@tempml.net"],
+                ["ml-000010@amane.net"],
                 msg)
             self.assertEqual(ret, const.SMTP_STATUS_CLOSED_ML)
 
@@ -522,7 +522,7 @@ class ProcessMessageTest(unittest.TestCase):
         fake_db.change_ml_status('ml-000010', const.STATUS_CLOSED,
                                  "test2@example.com")
         msg = 'From: Test1 <test1@example.com>\n' \
-              'To: ml-000010 <ml-000010@testml.net>, ' \
+              'To: ml-000010 <ml-000010@example.net>, ' \
               'Test2 <test2@example.com>\n' \
               'Subject: CLOSE\n' \
               '\n' \
@@ -535,7 +535,7 @@ class ProcessMessageTest(unittest.TestCase):
             ret = self.handler.process_message(
                 ("127.0.0.2", 1000),
                 "test1@example.com",
-                ["ml-000010@tempml.net"],
+                ["ml-000010@amane.net"],
                 msg)
             self.assertEqual(ret, const.SMTP_STATUS_CLOSED_ML)
 
@@ -547,7 +547,7 @@ class ProcessMessageTest(unittest.TestCase):
         fake_db.change_ml_status('ml-000010', const.STATUS_CLOSED,
                                  "test2@example.com")
         msg = 'From: Test1 <test1@example.com>\n' \
-              'To: ml-000010 <ml-000010@testml.net>, ' \
+              'To: ml-000010 <ml-000010@example.net>, ' \
               'Test2 <test2@example.com>\n' \
               'Subject: REOPEN\n' \
               '\n' \
@@ -560,7 +560,7 @@ class ProcessMessageTest(unittest.TestCase):
             self.handler.process_message(
                 ("127.0.0.2", 1000),
                 "test1@example.com",
-                ["ml-000010@tempml.net"],
+                ["ml-000010@amane.net"],
                 msg)
             self.assertEqual(self.ml_name_arg, 'ml-000010')
             self.assertEqual(fake_db.get_members('ml-000010'), final_members)
@@ -575,7 +575,7 @@ class ProcessMessageTest(unittest.TestCase):
         fake_db.change_ml_status('ml-000010', const.STATUS_ORPHANED,
                                  "test2@example.com")
         msg = 'From: Test1 <test1@example.com>\n' \
-              'To: ml-000010 <ml-000010@testml.net>, ' \
+              'To: ml-000010 <ml-000010@example.net>, ' \
               'Test2 <test2@example.com>\n' \
               'Subject: REOPEN\n' \
               '\n' \
@@ -588,7 +588,7 @@ class ProcessMessageTest(unittest.TestCase):
             self.handler.process_message(
                 ("127.0.0.2", 1000),
                 "test1@example.com",
-                ["ml-000010@tempml.net"],
+                ["ml-000010@amane.net"],
                 msg)
             self.assertEqual(self.ml_name_arg, 'ml-000010')
             self.assertEqual(fake_db.get_members('ml-000010'), final_members)
@@ -601,7 +601,7 @@ class ProcessMessageTest(unittest.TestCase):
         fake_db.create_ml("tenant1", 'ml-000010', "hoge", initial_members,
                           "test1@example.com")
         msg = 'From: Test1 <test1@example.com>\n' \
-              'To: ml-000010 <ml-000010@testml.net>, ' \
+              'To: ml-000010 <ml-000010@example.net>, ' \
               'Test2 <test2@example.com>\n' \
               'Subject: REOPEN\n' \
               '\n' \
@@ -614,7 +614,7 @@ class ProcessMessageTest(unittest.TestCase):
             self.handler.process_message(
                 ("127.0.0.2", 1000),
                 "test1@example.com",
-                ["ml-000010@tempml.net"],
+                ["ml-000010@amane.net"],
                 msg)
             self.assertEqual(self.ml_name_arg, 'ml-000010')
             self.assertEqual(fake_db.get_members('ml-000010'), final_members)
@@ -623,22 +623,22 @@ class ProcessMessageTest(unittest.TestCase):
 class ProcessMessageWithAdminsTest(unittest.TestCase):
     """process_message() tests"""
 
-    @mock.patch('tempml.db', fake_db)
+    @mock.patch('amane.db', fake_db)
     @mock.patch('smtpd.SMTPServer', DummySMTPServer)
     def setUp(self):
         self.db_name = "test%04d" % random.randint(0, 1000)
         self.ml_name_arg = None
         self.message_arg = None
 
-        from tempml.cmd import smtpd
-        self.handler = smtpd.TempMlSMTPServer(
+        from amane.cmd import smtpd
+        self.handler = smtpd.AmaneSMTPServer(
             listen_address="127.0.0.1",
             listen_port=25,
             relay_host="localhost",
             relay_port=1025,
             db_url="mongodb://localhost",
             db_name=self.db_name,
-            domain="testml.net")
+            domain="example.net")
         self.tenant_name = "tenant1"
         config = {
             "admins": {"test2@example.com", "test4@example.com",
@@ -674,7 +674,7 @@ class ProcessMessageWithAdminsTest(unittest.TestCase):
 
     def test_create_ml_by_admin(self):
         msg = 'From: Test2 <test2@example.com>\n' \
-              'To: New mail <new@testml.net>\n' \
+              'To: New mail <new@example.net>\n' \
               'Subject: Test message\n' \
               '\n' \
               'Test mail\n'
@@ -685,14 +685,14 @@ class ProcessMessageWithAdminsTest(unittest.TestCase):
             self.handler.process_message(
                 ("127.0.0.2", 1000),
                 "test2@example.com",
-                ["new@tempml.net"],
+                ["new@amane.net"],
                 msg)
             self.assertEqual(self.ml_name_arg, 'ml-000001')
             self.assertEqual(fake_db.get_members('ml-000001'), final_members)
 
     def test_create_ml_w_to_admin(self):
         msg = 'From: Test1 <test1@example.com>\n' \
-              'To: New mail <new@testml.net>, Test2 <test2@example.com>\n' \
+              'To: New mail <new@example.net>, Test2 <test2@example.com>\n' \
               'Subject: Test message\n' \
               '\n' \
               'Test mail\n'
@@ -703,14 +703,14 @@ class ProcessMessageWithAdminsTest(unittest.TestCase):
             self.handler.process_message(
                 ("127.0.0.2", 1000),
                 "test1@example.com",
-                ["new@tempml.net"],
+                ["new@amane.net"],
                 msg)
             self.assertEqual(self.ml_name_arg, 'ml-000001')
             self.assertEqual(fake_db.get_members('ml-000001'), final_members)
 
     def test_create_ml_w_cc_admin(self):
         msg = 'From: Test1 <test1@example.com>\n' \
-              'To: New mail <new@testml.net>\n' \
+              'To: New mail <new@example.net>\n' \
               'Cc: Test1 <test1@example.com>\n' \
               'Subject: Test message\n' \
               '\n' \
@@ -722,14 +722,14 @@ class ProcessMessageWithAdminsTest(unittest.TestCase):
             self.handler.process_message(
                 ("127.0.0.2", 1000),
                 "test1@example.com",
-                ["new@tempml.net"],
+                ["new@amane.net"],
                 msg)
             self.assertEqual(self.ml_name_arg, 'ml-000001')
             self.assertEqual(fake_db.get_members('ml-000001'), final_members)
 
     def test_create_ml_w_2_tos_i_admin(self):
         msg = 'From: Test1 <test1@example.com>\n' \
-              'To: New mail <new@testml.net>, Test2 <test2@example.com>\n' \
+              'To: New mail <new@example.net>, Test2 <test2@example.com>\n' \
               'Subject: Test message\n' \
               '\n' \
               'Test mail\n'
@@ -740,14 +740,14 @@ class ProcessMessageWithAdminsTest(unittest.TestCase):
             self.handler.process_message(
                 ("127.0.0.2", 1000),
                 "test1@example.com",
-                ["new@tempml.net", "test2@example.com"],
+                ["new@amane.net", "test2@example.com"],
                 msg)
             self.assertEqual(self.ml_name_arg, 'ml-000001')
             self.assertEqual(fake_db.get_members('ml-000001'), final_members)
 
     def test_create_ml_w_2_ccs_i_admin(self):
         msg = 'From: Test1 <test1@example.com>\n' \
-              'To: New mail <new@testml.net>\n' \
+              'To: New mail <new@example.net>\n' \
               'Cc: Test3 <test3@example.com>, Test4 <test4@example.com>\n' \
               'Subject: Test message\n' \
               '\n' \
@@ -759,14 +759,14 @@ class ProcessMessageWithAdminsTest(unittest.TestCase):
             self.handler.process_message(
                 ("127.0.0.2", 1000),
                 "test1@example.com",
-                ["new@tempml.net"],
+                ["new@amane.net"],
                 msg)
             self.assertEqual(self.ml_name_arg, 'ml-000001')
             self.assertEqual(fake_db.get_members('ml-000001'), final_members)
 
     def test_create_ml_w_2_tos_and_2_ccs_i_admins(self):
         msg = 'From: Test1 <test1@example.com>\n' \
-              'To: New mail <new@testml.net>, Test2 <test2@example.com>\n' \
+              'To: New mail <new@example.net>, Test2 <test2@example.com>\n' \
               'Cc: Test3 <test3@example.com>, Test4 <test4@example.com>\n' \
               'Subject: Test message\n' \
               '\n' \
@@ -778,7 +778,7 @@ class ProcessMessageWithAdminsTest(unittest.TestCase):
             self.handler.process_message(
                 ("127.0.0.2", 1000),
                 "test1@example.com",
-                ["new@tempml.net", "test2@example.com"],
+                ["new@amane.net", "test2@example.com"],
                 msg)
             self.assertEqual(self.ml_name_arg, 'ml-000001')
             self.assertEqual(fake_db.get_members('ml-000001'), final_members)
@@ -791,7 +791,7 @@ class ProcessMessageWithAdminsTest(unittest.TestCase):
         final_members = {"test1@example.com"}
 
         msg = 'From: Test2 <test2@example.com>\n' \
-              'To: ml-000010 <ml-000010@testml.net>\n' \
+              'To: ml-000010 <ml-000010@example.net>\n' \
               'Subject: Test message\n' \
               '\n' \
               'Test mail\n'
@@ -801,7 +801,7 @@ class ProcessMessageWithAdminsTest(unittest.TestCase):
             ret = self.handler.process_message(
                 ("127.0.0.2", 1000),
                 "test2@example.com",
-                ["ml-000010@tempml.net"],
+                ["ml-000010@amane.net"],
                 msg)
             self.assertEqual(self.ml_name_arg, 'ml-000010')
             self.assertEqual(fake_db.get_members('ml-000010'), final_members)
@@ -811,7 +811,7 @@ class ProcessMessageWithAdminsTest(unittest.TestCase):
         fake_db.create_ml("tenant1", 'ml-000010', "hoge", initial_members,
                           "test1@example.com")
         msg = 'From: Test1 <test1@example.com>\n' \
-              'To: ml-000010 <ml-000010@testml.net>, ' \
+              'To: ml-000010 <ml-000010@example.net>, ' \
               'Test2 <test2@example.com>\n' \
               'Subject: Test message\n' \
               '\n' \
@@ -823,7 +823,7 @@ class ProcessMessageWithAdminsTest(unittest.TestCase):
             self.handler.process_message(
                 ("127.0.0.2", 1000),
                 "test1@example.com",
-                ["ml-000010@tempml.net"],
+                ["ml-000010@amane.net"],
                 msg)
             self.assertEqual(self.ml_name_arg, 'ml-000010')
             self.assertEqual(fake_db.get_members('ml-000010'), final_members)
@@ -833,7 +833,7 @@ class ProcessMessageWithAdminsTest(unittest.TestCase):
         fake_db.create_ml("tenant1", 'ml-000010', "hoge", initial_members,
                           "test1@example.com")
         msg = 'From: Test1 <test1@example.com>\n' \
-              'To: ml-000010 <ml-000010@testml.net>\n' \
+              'To: ml-000010 <ml-000010@example.net>\n' \
               'Cc: Test4 <test4@example.com>\n' \
               'Subject: Test message\n' \
               '\n' \
@@ -845,7 +845,7 @@ class ProcessMessageWithAdminsTest(unittest.TestCase):
             self.handler.process_message(
                 ("127.0.0.2", 1000),
                 "test1@example.com",
-                ["ml-000010@tempml.net"],
+                ["ml-000010@amane.net"],
                 msg)
             self.assertEqual(self.ml_name_arg, 'ml-000010')
             self.assertEqual(fake_db.get_members('ml-000010'), final_members)
@@ -855,7 +855,7 @@ class ProcessMessageWithAdminsTest(unittest.TestCase):
         fake_db.create_ml("tenant1", 'ml-000010', "hoge", initial_members,
                           "test1@example.com")
         msg = 'From: Test1 <test1@example.com>\n' \
-              'To: ml-000010 <ml-000010@testml.net>\n' \
+              'To: ml-000010 <ml-000010@example.net>\n' \
               'Cc: Test3 <test3@example.com>, Test4 <test4@example.com>\n' \
               'Subject: Test message\n' \
               '\n' \
@@ -867,7 +867,7 @@ class ProcessMessageWithAdminsTest(unittest.TestCase):
             self.handler.process_message(
                 ("127.0.0.2", 1000),
                 "test1@example.com",
-                ["ml-000010@tempml.net"],
+                ["ml-000010@amane.net"],
                 msg)
             self.assertEqual(self.ml_name_arg, 'ml-000010')
             self.assertEqual(fake_db.get_members('ml-000010'), final_members)
@@ -877,7 +877,7 @@ class ProcessMessageWithAdminsTest(unittest.TestCase):
         fake_db.create_ml("tenant1", 'ml-000010', "hoge", initial_members,
                           "test1@example.com")
         msg = 'From: Test1 <test1@example.com>\n' \
-              'To: ml-000010 <ml-000010@testml.net>, ' \
+              'To: ml-000010 <ml-000010@example.net>, ' \
               'Test2 <test2@example.com>\n' \
               'Cc: Test3 <test3@example.com>, Test4 <test4@example.com>\n' \
               'Subject: Test message\n' \
@@ -890,7 +890,7 @@ class ProcessMessageWithAdminsTest(unittest.TestCase):
             self.handler.process_message(
                 ("127.0.0.2", 1000),
                 "test1@example.com",
-                ["ml-000010@tempml.net"],
+                ["ml-000010@amane.net"],
                 msg)
             self.assertEqual(self.ml_name_arg, 'ml-000010')
             self.assertEqual(fake_db.get_members('ml-000010'), final_members)
@@ -900,7 +900,7 @@ class ProcessMessageWithAdminsTest(unittest.TestCase):
         fake_db.create_ml("tenant1", 'ml-000010', "hoge", initial_members,
                           "test1@example.com")
         msg = 'From: Test1 <test1@example.com>\n' \
-              'To: ml-000010 <ml-000010@testml.net>, ' \
+              'To: ml-000010 <ml-000010@example.net>, ' \
               'Test2 <test2@example.com>\n' \
               'Subject: \n' \
               '\n' \
@@ -912,7 +912,7 @@ class ProcessMessageWithAdminsTest(unittest.TestCase):
             self.handler.process_message(
                 ("127.0.0.2", 1000),
                 "test1@example.com",
-                ["ml-000010@tempml.net"],
+                ["ml-000010@amane.net"],
                 msg)
             self.assertEqual(m.call_count, 0)
             self.assertEqual(fake_db.get_members('ml-000010'), final_members)
@@ -922,7 +922,7 @@ class ProcessMessageWithAdminsTest(unittest.TestCase):
         fake_db.create_ml("tenant1", 'ml-000010', "hoge", initial_members,
                           "test1@example.com")
         msg = 'From: Test2 <test2@example.com>\n' \
-              'To: ml-000010 <ml-000010@testml.net>\n' \
+              'To: ml-000010 <ml-000010@example.net>\n' \
               'Cc: Test3 <test3@example.com>\n' \
               'Subject: \n' \
               '\n' \
@@ -934,7 +934,7 @@ class ProcessMessageWithAdminsTest(unittest.TestCase):
             self.handler.process_message(
                 ("127.0.0.2", 1000),
                 "test2@example.com",
-                ["ml-000010@tempml.net"],
+                ["ml-000010@amane.net"],
                 msg)
             self.assertEqual(self.ml_name_arg, 'ml-000010')
             self.assertEqual(fake_db.get_members('ml-000010'), final_members)
@@ -944,7 +944,7 @@ class ProcessMessageWithAdminsTest(unittest.TestCase):
         fake_db.create_ml("tenant1", 'ml-000010', "hoge", initial_members,
                           "test1@example.com")
         msg = 'From: Test1 <test1@example.com>\n' \
-              'To: ml-000010 <ml-000010@testml.net>\n' \
+              'To: ml-000010 <ml-000010@example.net>\n' \
               'Cc: Test3 <test3@example.com>, Test4 <test4@example.com>\n' \
               'Subject: \n' \
               '\n' \
@@ -956,7 +956,7 @@ class ProcessMessageWithAdminsTest(unittest.TestCase):
             self.handler.process_message(
                 ("127.0.0.2", 1000),
                 "test1@example.com",
-                ["ml-000010@tempml.net"],
+                ["ml-000010@amane.net"],
                 msg)
             self.assertEqual(self.ml_name_arg, 'ml-000010')
             self.assertEqual(fake_db.get_members('ml-000010'), final_members)
@@ -966,7 +966,7 @@ class ProcessMessageWithAdminsTest(unittest.TestCase):
         fake_db.create_ml("tenant1", 'ml-000010', "hoge", initial_members,
                           "test1@example.com")
         msg = 'From: Test1 <test1@example.com>\n' \
-              'To: ml-000010 <ml-000010@testml.net>, ' \
+              'To: ml-000010 <ml-000010@example.net>, ' \
               'Test2 <test2@example.com>\n' \
               'Cc: Test3 <test3@example.com>, Test4 <test4@example.com>\n' \
               'Subject: \n' \
@@ -979,7 +979,7 @@ class ProcessMessageWithAdminsTest(unittest.TestCase):
             self.handler.process_message(
                 ("127.0.0.2", 1000),
                 "test1@example.com",
-                ["ml-000010@tempml.net"],
+                ["ml-000010@amane.net"],
                 msg)
             self.assertEqual(self.ml_name_arg, 'ml-000010')
             self.assertEqual(fake_db.get_members('ml-000010'), final_members)
@@ -988,22 +988,22 @@ class ProcessMessageWithAdminsTest(unittest.TestCase):
 class SendPostTest(unittest.TestCase):
     """send_post() tests"""
 
-    @mock.patch('tempml.db', fake_db)
+    @mock.patch('amane.db', fake_db)
     @mock.patch('smtpd.SMTPServer', DummySMTPServer)
     def setUp(self):
         self.db_name = "test%04d" % random.randint(0, 1000)
         self.members = None
         self.message = None
 
-        from tempml.cmd import smtpd
-        self.handler = smtpd.TempMlSMTPServer(
+        from amane.cmd import smtpd
+        self.handler = smtpd.AmaneSMTPServer(
             listen_address="127.0.0.1",
             listen_port=25,
             relay_host="localhost",
             relay_port=1025,
             db_url="mongodb://localhost",
             db_name=self.db_name,
-            domain="testml.net")
+            domain="example.net")
         self.tenant_name = "tenant1"
         config = {
             "admins": {"hoge"},
@@ -1034,14 +1034,14 @@ class SendPostTest(unittest.TestCase):
         self.members = members
         self.message = message
 
-    @mock.patch('tempml.cmd.smtpd.smtplib.SMTP', DummySMTPClient)
+    @mock.patch('amane.cmd.smtpd.smtplib.SMTP', DummySMTPClient)
     def test_no_cc(self):
         members = {"test1@example.com", "test2@example.com",
                    "test3@example.com", "test4@example.com"}
         fake_db.create_ml("tenant1", 'ml-000010', "hoge", members,
                           "test1@example.com")
         msg = 'From: Test1 <test1@example.com>\n' \
-              'To: ml-000010 <ml-000010@testml.net>\n' \
+              'To: ml-000010 <ml-000010@example.net>\n' \
               'Subject: test\n' \
               'Content-Type: Multipart/Mixed; boundary="hoge"\n' \
               'Content-Transfer-Encoding: 7bit\n' \
@@ -1060,20 +1060,20 @@ class SendPostTest(unittest.TestCase):
             self.handler.send_post('ml-000010', msg_obj, "xyz", members)
             self.assertEqual(self.members, members)
             message = email.message_from_string(self.message)
-            self.assertEqual(message['to'], 'ml-000010@testml.net')
-            self.assertEqual(message['reply-to'], 'ml-000010@testml.net')
+            self.assertEqual(message['to'], 'ml-000010@example.net')
+            self.assertEqual(message['reply-to'], 'ml-000010@example.net')
             self.assertEqual(message.get('cc', ''), '')
             self.assertEqual(message['subject'],
                              '=?iso-2022-jp?b?W21sLTAwMDAxMF0gdGVzdA==?=')
 
-    @mock.patch('tempml.cmd.smtpd.smtplib.SMTP', DummySMTPClient)
+    @mock.patch('amane.cmd.smtpd.smtplib.SMTP', DummySMTPClient)
     def test_2_ccs(self):
         members = {"test1@example.com", "test2@example.com",
                    "test3@example.com", "test4@example.com"}
         fake_db.create_ml("tenant1", 'ml-000010', "hoge", members,
                           "test1@example.com")
         msg = 'From: Test1 <test1@example.com>\n' \
-              'To: ml-000010 <ml-000010@testml.net>\n' \
+              'To: ml-000010 <ml-000010@example.net>\n' \
               'Cc: Test3 <test3@example.com>, Test4 <test4@example.com>\n' \
               'Subject: test\n' \
               'Content-Type: Multipart/Mixed; boundary="hoge"\n' \
@@ -1093,22 +1093,22 @@ class SendPostTest(unittest.TestCase):
             self.handler.send_post('ml-000010', msg_obj, "xyz", members)
             self.assertEqual(self.members, members)
             message = email.message_from_string(self.message)
-            self.assertEqual(message['to'], 'ml-000010@testml.net')
-            self.assertEqual(message['reply-to'], 'ml-000010@testml.net')
+            self.assertEqual(message['to'], 'ml-000010@example.net')
+            self.assertEqual(message['reply-to'], 'ml-000010@example.net')
             self.assertEqual(
                 message['cc'],
                 'Test3 <test3@example.com>, Test4 <test4@example.com>')
             self.assertEqual(message['subject'],
                              '=?iso-2022-jp?b?W21sLTAwMDAxMF0gdGVzdA==?=')
 
-    @mock.patch('tempml.cmd.smtpd.smtplib.SMTP', DummySMTPClient)
+    @mock.patch('amane.cmd.smtpd.smtplib.SMTP', DummySMTPClient)
     def test_members(self):
         members = {"test1@example.com", "test2@example.com",
                    "test3@example.com", "test4@example.com"}
         fake_db.create_ml("tenant1", 'ml-000010', "hoge", members,
                           "test1@example.com")
         msg = 'From: Test1 <test1@example.com>\n' \
-              'To: ml-000010 <ml-000010@testml.net>\n' \
+              'To: ml-000010 <ml-000010@example.net>\n' \
               'Cc: Test3 <test3@example.com>, Test4 <test4@example.com>\n' \
               'Subject: test\n' \
               'Content-Type: Multipart/Mixed; boundary="hoge"\n' \
@@ -1128,8 +1128,8 @@ class SendPostTest(unittest.TestCase):
             self.handler.send_post('ml-000010', msg_obj, "xyz", members)
             self.assertEqual(self.members, members)
             message = email.message_from_string(self.message)
-            self.assertEqual(message['to'], 'ml-000010@testml.net')
-            self.assertEqual(message['reply-to'], 'ml-000010@testml.net')
+            self.assertEqual(message['to'], 'ml-000010@example.net')
+            self.assertEqual(message['reply-to'], 'ml-000010@example.net')
             self.assertEqual(
                 message['cc'],
                 'Test3 <test3@example.com>, Test4 <test4@example.com>')

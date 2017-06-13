@@ -14,7 +14,7 @@
 #    under the License.
 
 """
-Smoketests for Database API (tempml.db)
+Smoketests for Database API (amane.db)
 """
 
 from datetime import datetime
@@ -22,8 +22,8 @@ import random
 import time
 import unittest
 
-from tempml import const
-from tempml import db
+from amane import const
+from amane import db
 
 
 ML_NAME = "test-%06d"
@@ -80,8 +80,8 @@ class TenantTest(DbTest):
 
     def test_delete_tenant(self):
         tenant_name = "tenant1"
-        members = ["test1@testml.net"]
-        by = "test1@testml.net"
+        members = ["test1@example.net"]
+        by = "test1@example.net"
         db.create_tenant(tenant_name, "hoge", self.config)
         config = {
             "admins": {"hoge"},

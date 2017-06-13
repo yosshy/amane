@@ -14,7 +14,7 @@
 #    under the License.
 
 """
-Smoketests for reviewer (tempml.cmd.reviewer)
+Smoketests for reviewer (amane.cmd.reviewer)
 """
 
 from datetime import datetime
@@ -29,8 +29,8 @@ try:
 except:
     import mock
 
-from tempml import const
-from tempml.tests import fake_db
+from amane import const
+from amane.tests import fake_db
 
 
 ML_NAME = "test-%06d"
@@ -58,7 +58,7 @@ class DummySMTPClient(object):
 class NotifyTest(unittest.TestCase):
     """notify() tests"""
 
-    @mock.patch('tempml.db', fake_db)
+    @mock.patch('amane.db', fake_db)
     @mock.patch('smtpd.SMTPServer', DummySMTPServer)
     def setUp(self):
         self.db_name = "test%04d" % random.randint(0, 1000)
@@ -75,7 +75,7 @@ class NotifyTest(unittest.TestCase):
         self.content_arg = content
         self.members_arg = members
 
-    @mock.patch('tempml.db', fake_db)
+    @mock.patch('amane.db', fake_db)
     @mock.patch('smtpd.SMTPServer', DummySMTPServer)
     def _test(self, old_status, new_status, days, altered):
         self.tenant_name = "tenant1"
@@ -109,13 +109,13 @@ class NotifyTest(unittest.TestCase):
         if old_status:
             fake_db.change_ml_status('ml-000010', old_status, "xxx")
 
-        from tempml.cmd import reviewer
+        from amane.cmd import reviewer
         self.reviewer = reviewer.Reviewer(
             relay_host="localhost",
             relay_port=1025,
             db_url="mongodb://localhost",
             db_name=self.db_name,
-            domain="testml.net")
+            domain="example.net")
 
         with mock.patch.object(self.reviewer, 'send_post') as m:
             m.side_effect = self._send_post

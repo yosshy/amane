@@ -78,7 +78,7 @@ CHANGES
 * smtp\_handler: added members keyword to send\_post()
 * smtp\_handler: improved unit tests for send\_post()
 * smtp\_handler: don't remove non-delivered members
-* smtp\_handler: updated calling \_\_init\_\_() of super-class in TempMlSMTPHandler
+* smtp\_handler: updated calling \_\_init\_\_() of super-class in AmaneSMTPHandler
 * smtp\_handler: applied PEP8
 * smtp\_handler: Applied camel-cases to headers
 * smtp\_handler: applied Python 3.4

@@ -1,79 +1,79 @@
-=============
-python-tempml
-=============
+============
+python-amane
+============
 
-TempML means "Temporary Mailing List Manager". Its basic idea has come
-from QuickML (https://github.com/masui/QuickML) but it's not the same.
-QuickML is a global easy-to-use mailing list manager, but TempML has
-been developed to manage asking mails. So TemlML is a kind of ticket
+Amane is an instant mailing list manager. Its basic idea has come from
+QuickML (https://github.com/masui/QuickML) but it's not the same.
+QuickML is a common easy-to-use mailing list manager, but Amane has
+been developed to manage asking mails. So Amane is a kind of ticket
 management system like Redmine.
 
-Difference between QuickML and TempML
--------------------------------------
+Difference between QuickML and Amane
+------------------------------------
 
 * Mail destination to create a new mailing list
 
   * QuickML: the first mail account will be used for further posts.
-  * TempML: it has a specific mail account to create the new one.
+  * Amane: it has a specific mail account to create the new one.
     When a mail received, a new mail account will be created and used.
 
-* On TempML, you can define staff members to register new mailing
+* On Amane, you can define staff members to register new mailing
   lists automatically.  They can't be removed via member-removing
   mails.
-* TempML supports multi-tenancy. Each tenant has a mail account to
+* Amane supports multi-tenancy. Each tenant has a mail account to
   create mailing lists, subject prefix, staff members, various message
   templates.
-* On TempML, each post will have a system message as an attachment. It
+* On Amane, each post will have a system message as an attachment. It
   can contain basic mailing-list usage and a list of members.
 
-Difference between Redmine and TempML
--------------------------------------
+Difference between Redmine and Amane
+------------------------------------
 
-* Redmine is web-based, but TemlML is mail-based.
-* Redmine users can customize ticket status, but TempML users cannot.
-* Redmine users can define importance of tickets, but TempML users
+* Redmine is web-based, but Amane is mail-based.
+* Redmine users can customize ticket status, but Amane users cannot.
+* Redmine users can define importance of tickets, but Amane users
   cannot.
-* Redmine users can define ticket workflows, but TempML users cannot.
+* Redmine users can define ticket workflows, but Amane users cannot.
 
 
-How to install TempML
-=====================
+How to install Amane
+====================
 
 Run commands below::
 
     # yum install mongodb-server
-    # pip install tempml
+    # pip install amane
 
-How to configure TempML
-=======================
+How to configure Amane
+======================
 
-TempML has 2 confiugration files.
+Amane has 2 confiugration files.
 
-TempML confiugration file (/etc/tempml/tempml.conf)
----------------------------------------------------
+Amane confiugration file (/etc/amane/amane.conf)
+------------------------------------------------
 
 A YAML file like below::
 
-    db_name: tempml
+    db_name: amane
     db_url: mongodb://localhost/
     relay_host: localhost
     relay_port: 25
     listen_address: 192.168.0.1
     listen_port: 25
-    log_file: /var/log/tempml.log
+    log_file: /var/log/amane.log
     domain: example.com
 
 * db_url, db_name ... URI and DB name of MongoDB
 * relay_host, relay_port ... IP address and port number of the
   external SMTP server (relay host) for sending posts
 * listen_address, listen_port ...IP address and port number that
-  tempml_smptd will listen
-* log_file ... Path to a log file used by TempML commands
-* domain ... Domain name of the mail addresses tempml_smtpd will
+  amane_smptd will listen
+* log_file ... Path to a log file used by Amane commands
+* domain ... Domain name of the mail addresses amane_smtpd will
   handle
 
 Tenant confiugration file
---------------------------
+-------------------------
 
 A YAML file like below::
 
@@ -176,22 +176,22 @@ A YAML file like below::
 
 You can register a new tenant to the DB like below::
 
-    # tempmlctl tenant create <tenant_name> --yamlfile <tenant_configuration_file>
+    # amanectl tenant create <tenant_name> --yamlfile <tenant_configuration_file>
 
 To modify tenant configuration
 
 (1) Using a modified tenant configuration file::
 
-    # tempmlctl tenant update <tenant_name> --yamlfile <tenant_configuration_file>
+    # amanectl tenant update <tenant_name> --yamlfile <tenant_configuration_file>
 
 (2) Using command line options::
 
-    # tempmlctl tenant update <tenant_name> <option> <new-value> [<option> <new-value> ...]
+    # amanectl tenant update <tenant_name> <option> <new-value> [<option> <new-value> ...]
 
 
 How to start the service
 ========================
 
-Run tempml_smtpd like below::
+Run amane_smtpd like below::
 
-    # tempml_smtpd &
+    # amane_smtpd &
