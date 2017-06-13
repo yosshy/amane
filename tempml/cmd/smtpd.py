@@ -21,6 +21,7 @@ import argparse
 import asyncore
 import email
 from email.mime.text import MIMEText
+from email.mime.application import MIMEApplication
 from email.mime.multipart import MIMEMultipart
 from email.header import Header, decode_header, make_header
 import email_normalize
@@ -56,6 +57,26 @@ def normalize(addresses):
     return set(result)
 
 
+def ensure_multipart(message, default_charset):
+    if message.is_multipart():
+        return message
+
+    _message = MIMEMultipart()
+    for header, value in message.items():
+        _message[header] = value
+    maintype = message.get_content_maintype()
+    subtype = message.get_content_subtype()
+    if maintype == "text":
+        charset = message.get_content_charset(default_charset)
+        content = message.get_payload(decode=True).decode(charset)
+        part = MIMEText(content, _charset=charset, _subtype=subtype)
+    elif maintype == "application":
+        content = message.get_payload(decode=True)
+        part = MIMEApplication(content, _subtype=subtype)
+    _message.attach(part)
+    return _message
+
+
 class TempMlSMTPServer(smtpd.SMTPServer):
 
     def __init__(self, listen_address=None, listen_port=None, relay_host=None,
@@ -73,20 +94,6 @@ class TempMlSMTPServer(smtpd.SMTPServer):
 
     def process_message(self, peer, mailfrom, rcpttos, data):
         message = email.message_from_string(data)
-        if not message.is_multipart():
-            _message = MIMEMultipart()
-            for header, value in message.items():
-                _message[header] = value
-            charset = message.get_content_charset("us-ascii")
-            maintype = message.get_content_maintype()()
-            if maintype != "text":
-                logging.error("Non-text message")
-                return const.SMTP_STATUS_NOT_TEXT_MESSAGE
-            subtype = message.get_content_subtype()
-            content = message.get_payload(decode=True).decode(charset)
-            part = MIMEText(content, _charset=charset, _subtype=subtype)
-            _message.attach(part)
-            message = _message
 
         from_str = message.get('From', "").strip()
         to_str = message.get('To', "").strip()
@@ -152,6 +159,7 @@ class TempMlSMTPServer(smtpd.SMTPServer):
                 ml_address = ml_name + self.at_domain
                 params = dict(ml_name=ml_name, ml_address=ml_address,
                               mailfrom=mailfrom)
+                message = ensure_multipart(message, config['charset'])
                 self.send_message(config, ml_name, message, mailfrom, members,
                                   params, config['welcome_msg'], 'Welcome.txt')
                 return
@@ -174,6 +182,7 @@ class TempMlSMTPServer(smtpd.SMTPServer):
                 return const.SMTP_STATUS_NO_SUCH_TENANT
 
         params['new_ml_address'] = config['new_ml_account'] + self.at_domain
+        message = ensure_multipart(message, config['charset'])
 
         # Checking whether the sender is one of the ML members
         members = db.get_members(ml_name)
