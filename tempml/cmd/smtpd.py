@@ -78,6 +78,10 @@ class TempMlSMTPServer(smtpd.SMTPServer):
             for header, value in message.items():
                 _message[header] = value
             charset = message.get_content_charset("us-ascii")
+            maintype = message.get_content_maintype()()
+            if maintype != "text":
+                logging.error("Non-text message")
+                return const.SMTP_STATUS_NOT_TEXT_MESSAGE
             subtype = message.get_content_subtype()
             content = message.get_payload(decode=True).decode(charset)
             part = MIMEText(content, _charset=charset, _subtype=subtype)
