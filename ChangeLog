@@ -1,6 +1,7 @@
 CHANGES
 =======
 
+* ChangeLog: updated
 * const: modified 2 ops
 * db: don't update members on post
 * Attach 'AddMembers.txt' for new members
