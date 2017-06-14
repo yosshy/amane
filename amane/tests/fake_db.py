@@ -121,6 +121,7 @@ def create_tenant(tenant_name, by, config):
         "days_to_orphan": config["days_to_orphan"],
         "welcome_msg": config["welcome_msg"],
         "readme_msg": config["readme_msg"],
+        "add_msg": config["add_msg"],
         "remove_msg": config["remove_msg"],
         "reopen_msg": config["reopen_msg"],
         "goodbye_msg": config["goodbye_msg"],
@@ -518,6 +519,7 @@ def log_post(ml_name, members, by):
     log_dict = {
         "op": const.OP_POST,
         "by": by,
+        "members": members,
     }
     global MLS
     MLS[ml_name]['logs'].append(log_dict)

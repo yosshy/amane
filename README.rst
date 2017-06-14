@@ -99,8 +99,16 @@ A YAML file like below::
        To close a mailing list: send a post with "Subject: close"
        Current members (except staffs):
        {{ members | join('\r\n') }}
+     add_msg: |
+       {{ mailfrom }} has registered members below:
+       {{ cc | join('\r\n') }}
+       To register new members: send a post with their mail addresses as Cc:
+       To unregister members: send a post with their mail addresses as Cc: and empty Subject:
+       To close a mailing list: send a post with "Subject: close"
+       Current members (except staffs):
+       {{ members | join('\r\n') }}
      remove_msg: |
-       {{ mailfrom }} has removed members below:
+       {{ mailfrom }} has unregistered members below:
        {{ cc | join('\r\n') }}
        Current members and staffs only can register them again.
        To register new members: send a post with their mail addresses as Cc:

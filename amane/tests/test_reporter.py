@@ -123,6 +123,7 @@ class ProcessMessageTest(unittest.TestCase):
             "days_to_orphan": 7,
             "welcome_msg": "welcome_msg",
             "readme_msg": "readme_msg",
+            "add_msg": "add_msg",
             "remove_msg": "remove_msg",
             "reopen_msg": "reopen_msg",
             "goodbye_msg": "goodbye_msg",
