@@ -125,16 +125,6 @@ class NotifyTest(unittest.TestCase):
         for key, value in self.config.items():
             self.assertEqual(config[key], value)
 
-    def test_update_tenant(self):
-        result = self.tester(
-            "--config-file", "sample/amane.conf", "tenant", "update",
-            "--days-to-orphan", "14",
-            self.tenant_name)
-        self.assertEqual(result.output, "")
-        self.assertEqual(result.exit_code, 0)
-        config = fake_db.get_tenant(self.tenant_name)
-        self.assertEqual(config["days_to_orphan"], 14)
-
     def test_delete_tenant(self):
         result = self.tester(
             "--config-file", "sample/amane.conf", "tenant", "delete",
@@ -186,6 +176,74 @@ class NotifyTest(unittest.TestCase):
             t9.seek(0)
             result = self.tester(
                 "--config-file", "sample/amane.conf", "tenant", "create",
+                self.tenant_name,
+                "--admin", "hoge",
+                "--charset", self.config["charset"],
+                "--days-to-close", self.config["days_to_close"],
+                "--days-to-orphan", self.config["days_to_orphan"],
+                "--ml-name-format", self.config["ml_name_format"],
+                "--new-ml-account", self.config["new_ml_account"],
+                "--welcome-file", t1.name,
+                "--readme-file", t2.name,
+                "--add-file", t3.name,
+                "--remove-file", t4.name,
+                "--reopen-file", t5.name,
+                "--goodbye-file", t6.name,
+                "--report-subject", self.config["report_subject"],
+                "--report-file", t7.name,
+                "--orphaned-subject", self.config["orphaned_subject"],
+                "--orphaned-file", t8.name,
+                "--closed-subject", self.config["closed_subject"],
+                "--closed-file", t9.name)
+        self.assertEqual(result.output, "")
+        self.assertEqual(result.exit_code, 0)
+        config = fake_db.get_tenant(self.tenant_name)
+        for key, value in self.config.items():
+            self.assertEqual(config[key], value)
+
+    def test_update_tenant_by_yaml(self):
+        with tempfile.NamedTemporaryFile(mode="wt") as t:
+            logging.debug("TempFile: %s", t.name)
+            yaml.dump(self.config, t)
+            result = self.tester(
+                "--config-file", "sample/amane.conf", "tenant", "update",
+                self.tenant_name, "--yamlfile", t.name)
+        self.assertEqual(result.exit_code, 0)
+        self.assertEqual(result.output, "")
+        config = fake_db.get_tenant(self.tenant_name)
+        for key, value in self.config.items():
+            self.assertEqual(config[key], value)
+
+    def test_update_tenant_by_opt(self):
+        with tempfile.NamedTemporaryFile(mode="wt") as t1, \
+                tempfile.NamedTemporaryFile(mode="wt") as t2, \
+                tempfile.NamedTemporaryFile(mode="wt") as t3, \
+                tempfile.NamedTemporaryFile(mode="wt") as t4, \
+                tempfile.NamedTemporaryFile(mode="wt") as t5, \
+                tempfile.NamedTemporaryFile(mode="wt") as t6, \
+                tempfile.NamedTemporaryFile(mode="wt") as t7, \
+                tempfile.NamedTemporaryFile(mode="wt") as t8, \
+                tempfile.NamedTemporaryFile(mode="wt") as t9:
+            t1.write(self.config["welcome_msg"])
+            t2.write(self.config["readme_msg"])
+            t3.write(self.config["add_msg"])
+            t4.write(self.config["remove_msg"])
+            t5.write(self.config["reopen_msg"])
+            t6.write(self.config["goodbye_msg"])
+            t7.write(self.config["report_msg"])
+            t8.write(self.config["orphaned_msg"])
+            t9.write(self.config["closed_msg"])
+            t1.seek(0)
+            t2.seek(0)
+            t3.seek(0)
+            t4.seek(0)
+            t5.seek(0)
+            t6.seek(0)
+            t7.seek(0)
+            t8.seek(0)
+            t9.seek(0)
+            result = self.tester(
+                "--config-file", "sample/amane.conf", "tenant", "update",
                 self.tenant_name,
                 "--admin", "hoge",
                 "--charset", self.config["charset"],
