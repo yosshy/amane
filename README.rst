@@ -49,7 +49,7 @@ Creating a new mailing list (ticket)
   mail to members including addresses at To:, Cc: and From: except \*1.
 
 Making a new post
-  Send a mail to the mailing list address.
+  Send a mail to the mailing list address (e.g. ml-000001@example.com).
 
 Adding members
   Send a mail with new addresses as Cc: to the mailing list address.
