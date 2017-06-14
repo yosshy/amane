@@ -55,7 +55,7 @@ Adding members
   Send a mail with new addresses as Cc: to the mailing list address.
 
 Removing members
-  Send a mail with addresses to be removed as Cc: and empty Subject:
+  Send a mail with empty Subject: and addresses to be removed as Cc:
   to the mailing list address.
 
 Closing the mailing list
