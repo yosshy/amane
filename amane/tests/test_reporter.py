@@ -77,13 +77,38 @@ class ConvertTest(unittest.TestCase):
 class ProcessMessageTest(unittest.TestCase):
     """process_message() tests"""
 
-    report_msg = 'new:\n%(new)s\n' \
-                 'open:\n%(open)s\n' \
-                 'orphaned:\n%(orphaned)s\n' \
-                 'closed:\n%(closed)s'
-    report_format = '- ml_name: %(ml_name)s\n  subject: %(subject)s\n' \
-                    '  created: %(created)s\n  updated: %(updated)s\n' \
-                    '  by: %(by)s'
+    report_msg = 'new:\n' \
+                 '{% for m in new -%}\n' \
+                 '- ml_name: {{ m.ml_name }}\n' \
+                 '  subject: {{ m.subject }}\n' \
+                 '  created: {{ m.created }}\n' \
+                 '  updated: {{ m.updated }}\n' \
+                 '  by: {{ m.by }}\n' \
+                 '{% endfor %}\n' \
+                 'open:\n' \
+                 '{% for m in open -%}\n' \
+                 '- ml_name: {{ m.ml_name }}\n' \
+                 '  subject: {{ m.subject }}\n' \
+                 '  created: {{ m.created }}\n' \
+                 '  updated: {{ m.updated }}\n' \
+                 '  by: {{ m.by }}\n' \
+                 '{% endfor %}\n' \
+                 'orphaned:\n' \
+                 '{% for m in orphaned -%}\n' \
+                 '- ml_name: {{ m.ml_name }}\n' \
+                 '  subject: {{ m.subject }}\n' \
+                 '  created: {{ m.created }}\n' \
+                 '  updated: {{ m.updated }}\n' \
+                 '  by: {{ m.by }}\n' \
+                 '{% endfor %}\n' \
+                 'closed:\n' \
+                 '{% for m in closed -%}\n' \
+                 '- ml_name: {{ m.ml_name }}\n' \
+                 '  subject: {{ m.subject }}\n' \
+                 '  created: {{ m.created }}\n' \
+                 '  updated: {{ m.updated }}\n' \
+                 '  by: {{ m.by }}\n' \
+                 '{% endfor %}\n'
 
     def setUp(self):
         fake_db.init_db(0, 0)
@@ -103,7 +128,6 @@ class ProcessMessageTest(unittest.TestCase):
             "goodbye_msg": "goodbye_msg",
             "report_subject": "report_subject",
             "report_msg": self.report_msg,
-            "report_format": self.report_format,
             "orphaned_subject": "orphaned_subject",
             "orphaned_msg": "orphaned_msg",
             "closed_subject": "closed_subject",
@@ -134,7 +158,6 @@ class ProcessMessageTest(unittest.TestCase):
                 m.side_effect = self._sendmail
                 reporter.report_status(report_subject="title",
                                        report_msg=self.report_msg,
-                                       report_format=self.report_format,
                                        report_closed_days=2,
                                        charset='us-ascii',
                                        domain="example.com")

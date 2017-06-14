@@ -22,6 +22,7 @@ from datetime import datetime, timedelta
 from email.message import Message
 from email.header import Header
 import email_normalize
+from jinja2 import Environment
 import logging
 import os
 import pbr.version
@@ -63,7 +64,6 @@ def convert(data):
 def report_tenant_status(relay_host=None, relay_port=None,
                          db_url=None, db_name=None,
                          report_subject=None, report_msg=None,
-                         report_format=None,
                          days_to_close=None, charset='utf8',
                          admins=None, domain=None, debug=False,
                          **kwargs):
@@ -71,23 +71,21 @@ def report_tenant_status(relay_host=None, relay_port=None,
     db.init_db(db_url, db_name)
 
     new = db.find_mls({'status': const.STATUS_NEW}, sortkey='updated')
+    new = [convert(_) for _ in new]
     _open = db.find_mls({'status': const.STATUS_OPEN}, sortkey='updated')
+    _open = [convert(_) for _ in _open]
     orphaned = db.find_mls({'status': const.STATUS_ORPHANED},
                            sortkey='updated')
+    orphaned = [convert(_) for _ in orphaned]
     closed_after = datetime.now() - timedelta(days=days_to_close)
     closed = db.find_mls({'status': const.STATUS_CLOSED,
                           'updated': {'$gt': closed_after}},
                          sortkey='updated', reverse=False)
+    closed = [convert(_) for _ in closed]
 
-    params = {'new': "\n".join([(report_format % convert(_)) for _ in new]),
-              'open': "\n".join([(report_format % convert(_)) for _ in _open]),
-              'orphaned': "\n".join([(report_format % convert(_))
-                                     for _ in orphaned]),
-              'closed': "\n".join([(report_format % convert(_))
-                                   for _ in closed])}
-
-    content = report_msg % params
-    content = content.replace("\r\n", "\n").replace("\n", "\r\n")
+    params = dict(new=new, open=_open, orphaned=orphaned, closed=closed)
+    temp = Environment(newline_sequence='\r\n')
+    content = temp.from_string(report_msg).render(params)
 
     # Format a report message
     _from = ERROR_RETURN + "@" + domain

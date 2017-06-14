@@ -93,7 +93,6 @@ class NotifyTest(unittest.TestCase):
             "goodbye_msg": "goodbye_msg",
             "report_subject": "report_subject",
             "report_msg": "report_msg",
-            "report_format": "report_format",
             "orphaned_subject": "orphaned_subject",
             "orphaned_msg": "orphaned_msg",
             "closed_subject": "closed_subject",

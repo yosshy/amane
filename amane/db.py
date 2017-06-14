@@ -112,7 +112,6 @@ def create_tenant(tenant_name, by, config):
         "goodbye_msg": config["goodbye_msg"],
         "report_subject": config["report_subject"],
         "report_msg": config["report_msg"],
-        "report_format": config["report_format"],
         "orphaned_subject": config["orphaned_subject"],
         "orphaned_msg": config["orphaned_msg"],
         "closed_subject": config["closed_subject"],
