@@ -112,7 +112,7 @@ def create_tenant(ctx, name, yamlfile, admin, charset, enable, disable,
     if yamlfile:
         tenant_config = yaml.load(yamlfile.read())
     if len(admin) > 0:
-        tenant_config['admins'] = set(admin)
+        tenant_config['admins'] = normalize(admin)
     if charset is not None:
         tenant_config['charset'] = charset
     if enable is True:
@@ -196,7 +196,7 @@ def update_tenant(ctx, name, yamlfile, admin, charset, enable, disable,
     if yamlfile:
         tenant_config = yaml.load(yamlfile.read())
     if len(admin) > 0:
-        tenant_config['admins'] = set(admin)
+        tenant_config['admins'] = normalize(admin)
     if charset is not None:
         tenant_config['charset'] = charset
     if enable is True:
