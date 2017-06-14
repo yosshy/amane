@@ -1,6 +1,13 @@
 CHANGES
 =======
 
+* setup: updated
+* README: updated
+
+0.9
+---
+
+* ChangeLog: updated
 * ChangeLog: updated
 * const: modified 2 ops
 * db: don't update members on post
