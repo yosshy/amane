@@ -77,75 +77,88 @@ Tenant confiugration file
 
 A YAML file like below::
 
-    admins:
-    - staff1@staff.example.com
-    - staff2@staff.example.com
-    charset: iso-2022-jp
-    ml_name_format: ml-%06d
-    new_ml_account: ask
-    days_to_close: 7
-    days_to_orphan: 7
-    readme_msg: |
-      Please send posts to %(ml_address)s.
-      To register new members: send a post with their mail addresses as Cc:
-      To unregister members: send a post with their mail addresses as Cc: and empty Subject:
-      To close a mailing list: send a post with "Subject: close"
-      Current members (without staffs):
-    welcome_msg: |
-      %(mailfrom)s has created a new ticket. Please send further posts to %(ml_address)s.
-      To register new members: send a post with their mail addresses as Cc:
-      To unregister members: send a post with their mail addresses as Cc: and empty Subject:
-      To close a mailing list: send a post with "Subject: close"
-      Current members (without staffs):
-    remove_msg: |
-      %(mailfrom)s has removed members below:
-      %(cc)s
-      Current members and staffs only can register them again.
-      To register new members: send a post with their mail addresses as Cc:
-      To unregister members: send a post with their mail addresses as Cc: and empty Subject:
-      To close a mailing list: send a post with "Subject: close"
-      Current members (without staffs):
-    goodbye_msg: |
-      %(mailfrom)s has closed this ticket. Please send a post %(new_ml_address)s for a new ticket.
-      Current members (without staffs):
-    reopen_msg: |
-      %(mailfrom)s has reopened this ticket.
-      To register new members: send a post with their mail addresses as Cc:
-      To unregister members: send a post with their mail addresses as Cc: and empty Subject:
-      To close a mailing list: send a post with "Subject: close"
-      Current members (without staffs):
-    report_subject: Daily status report
-    report_format: |
-      Ticket ID: %(ml_name)s\tSubject: %(subject)s
-      Created: %(created)s\tLast updated: %(updated)s\tBy: %(by)s"
-    report_msg: |
-      Today's status:
-
-      New Tickets    
-      ===========
-      %(new)s
-
-      Open Tickets    
-      ============
-      %(open)s
-
-      Orphaned Tickets    
-      ================
-      %(orphaned)s
-    
-      Recently Closed Tickets
-      =======================
-      %(closed)s
-    orphaned_subject: This ticket will be closed soon
-    orphaned_msg: |
-      This message was sent automatically.
-      Without a new post, this ticket will be closed 7 days later automatically.
-    closed_subject: This ticket was closed
-    closed_msg: |
-      This message was sent automatically.
-      This ticket was closed because it doesn't have a post 7 days.
-      Please send a post to %(new_ml_address)s for a new ticket.
-
+     admins:
+     - staff1@staff.example.com
+     - staff2@staff.example.com
+     charset: iso-2022-jp
+     ml_name_format: ml-%06d
+     new_ml_account: ask
+     days_to_close: 7
+     days_to_orphan: 7
+     readme_msg: |
+       Please send posts to {{ ml_address }}.
+       To register new members: send a post with their mail addresses as Cc:
+       To unregister members: send a post with their mail addresses as Cc: and empty Subject:
+       To close a mailing list: send a post with "Subject: close"
+       Current members (except staffs):
+       {{ members | join('\r\n') }}
+     welcome_msg: |
+       {{ mailfrom }} has created a new ticket. Please send further posts to {{ ml_address }}.
+       To register new members: send a post with their mail addresses as Cc:
+       To unregister members: send a post with their mail addresses as Cc: and empty Subject:
+       To close a mailing list: send a post with "Subject: close"
+       Current members (except staffs):
+       {{ members | join('\r\n') }}
+     remove_msg: |
+       {{ mailfrom }} has removed members below:
+       {{ cc | join('\r\n') }}
+       Current members and staffs only can register them again.
+       To register new members: send a post with their mail addresses as Cc:
+       To unregister members: send a post with their mail addresses as Cc: and empty Subject:
+       To close a mailing list: send a post with "Subject: close"
+       Current members (except staffs):
+       {{ members | join('\r\n') }}
+     goodbye_msg: |
+       {{ mailfrom }} has closed this ticket. Please send a post {{ new_ml_address }} for a new ticket.
+       Current members (except staffs):
+       {{ members | join('\r\n') }}
+     reopen_msg: |
+       {{ mailfrom }} has reopened this ticket.
+       To register new members: send a post with their mail addresses as Cc:
+       To unregister members: send a post with their mail addresses as Cc: and empty Subject:
+       To close a mailing list: send a post with "Subject: close"
+       Current members (except staffs):
+       {{ members | join('\r\n') }}
+     report_subject: Daily status report
+     report_msg: |
+       Today's status:
+     
+       New Tickets    
+       ===========
+       {% for m in new -%}
+       - ml_name: {{ m.ml_name }} subject: {{ m.subject }}
+         created: {{ m.created }} updated: {{ m.updated }} by: {{ m.by }}
+       {% endfor %}
+     
+       Open Tickets    
+       ============
+       {% for m in open -%}
+       - ml_name: {{ m.ml_name }} subject: {{ m.subject }}
+         created: {{ m.created }} updated: {{ m.updated }} by: {{ m.by }}
+       {% endfor %}
+     
+       Orphaned Tickets    
+       ================
+       {% for m in orphaned -%}
+       - ml_name: {{ m.ml_name }} subject: {{ m.subject }}
+         created: {{ m.created }} updated: {{ m.updated }} by: {{ m.by }}
+       {% endfor %}
+     
+       Recently Closed Tickets
+       =======================
+       {% for m in closed -%}
+       - ml_name: {{ m.ml_name }} subject: {{ m.subject }}
+         created: {{ m.created }} updated: {{ m.updated }} by: {{ m.by }}
+       {% endfor %}
+     orphaned_subject: This ticket will be closed soon
+     orphaned_msg: |
+       This message was sent automatically.
+       This ticket will be closed 7 days later if no post is sent.
+     closed_subject: This ticket was closed
+     closed_msg: |
+       This message was sent automatically.
+       This ticket was closed because it was inactive in the past week.
+       Please send a post to {{ new_ml_address }} for a new ticket.
 
 * admins ... List of staff's mail addresses
 * charset ... Default character set of the message body. For example:
@@ -167,8 +180,8 @@ A YAML file like below::
   tickets
 * goodbye_msg ... Template of the attached text file for the posts
   closing tickets
-* report_subject, report_msg, report_format ... Subject, message
-  template and status format of daily status reports for staffs
+* report_subject, report_msg ... Subject and message template of daily
+  status reports for staffs
 * orphaned_subject, orphaned_msg ... Subject and message template of
   notification mails on making tickets orphaned automatically
 * closed_subject, closed_msg ... Subject and message template of
