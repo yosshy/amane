@@ -39,6 +39,29 @@ Difference between Redmine and Amane
 * Redmine users can define ticket workflows, but Amane users cannot.
 
 
+How to use Amane
+================
+
+Creating a new mailing list (ticket)
+  Send a mail to the specific mail address (e.g. ask@example.com \*1)
+  to create new one. Amane will create a new mailing list with its own
+  mail address (e.g. ml-000001@example.com) and forward the initial
+  mail to members including addresses at To:, Cc: and From: except \*1.
+
+Making a new post
+  Send a mail to the mailing list address.
+
+Adding members
+  Send a mail with new addresses as Cc: to the mailing list address.
+
+Removing members
+  Send a mail with addresses to be removed as Cc: and empty Subject:
+  to the mailing list address.
+
+Closing the mailing list
+  Send a mail with "Subject: close" to the mailing list address.
+
+
 How to install Amane
 ====================
 
