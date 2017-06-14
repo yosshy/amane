@@ -49,7 +49,8 @@ How to configure Amane
 
 Amane has 2 confiugration files.
 
-1. Amane confiugration file (/etc/amane/amane.conf)
+Amane confiugration file (/etc/amane/amane.conf)
+================================================
 
 A YAML file like below::
 
@@ -71,7 +72,8 @@ A YAML file like below::
 * domain ... Domain name of the mail addresses amane_smtpd will
   handle
 
-2. Tenant confiugration file
+Tenant confiugration file
+=========================
 
 A YAML file like below::
 
