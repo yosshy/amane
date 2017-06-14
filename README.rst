@@ -9,7 +9,7 @@ been developed to manage asking mails. So Amane is a kind of ticket
 management system like Redmine.
 
 Difference between QuickML and Amane
-------------------------------------
+====================================
 
 * Mail destination to create a new mailing list
 
@@ -27,7 +27,7 @@ Difference between QuickML and Amane
   can contain basic mailing-list usage and a list of members.
 
 Difference between Redmine and Amane
-------------------------------------
+====================================
 
 * Redmine is web-based, but Amane is mail-based.
 * Redmine users can customize ticket status, but Amane users cannot.
@@ -37,7 +37,7 @@ Difference between Redmine and Amane
 
 
 How to install Amane
-====================
+--------------------
 
 Run commands below::
 
@@ -45,12 +45,11 @@ Run commands below::
     # pip install amane
 
 How to configure Amane
-======================
+----------------------
 
 Amane has 2 confiugration files.
 
-Amane Confiugration File (/etc/amane/amane.conf)
-------------------------------------------------
+1. Amane confiugration file (/etc/amane/amane.conf)
 
 A YAML file like below::
 
@@ -72,8 +71,7 @@ A YAML file like below::
 * domain ... Domain name of the mail addresses amane_smtpd will
   handle
 
-Tenant Confiugration File
--------------------------
+2. Tenant confiugration file
 
 A YAML file like below::
 
@@ -211,7 +209,7 @@ To modify tenant configuration
 
 
 How to start the service
-========================
+------------------------
 
 Run amane_smtpd like below::
 
