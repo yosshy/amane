@@ -519,6 +519,7 @@ def log_post(ml_name, members, by):
     log_dict = {
         "op": const.OP_POST,
         "by": by,
+        "members": members,
     }
     global MLS
     MLS[ml_name]['logs'].append(log_dict)

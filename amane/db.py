@@ -490,10 +490,10 @@ def log_post(ml_name, members, by):
     log_dict = {
         "op": const.OP_POST,
         "by": by,
+        "members": list(members),
     }
     DB.ml.find_one_and_update({'ml_name': ml_name},
-                              {'$set': {'members': list(members),
-                                        'updated': datetime.now(),
+                              {'$set': {'updated': datetime.now(),
                                         'by': by},
                                '$push': {'logs': log_dict}})
     if logging.root.level == logging.DEBUG:
