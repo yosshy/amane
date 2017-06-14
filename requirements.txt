@@ -2,3 +2,4 @@ pbr
 pymongo
 email_normalize
 yaml
+jinja2

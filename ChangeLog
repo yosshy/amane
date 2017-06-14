@@ -1,6 +1,23 @@
 CHANGES
 =======
 
+* ChangeLog: updated
+* const: modified 2 ops
+* db: don't update members on post
+* Attach 'AddMembers.txt' for new members
+* ChangeLog: updated
+* README: updated
+* sample: applied jinja2
+* reviewer: applied jinja2
+* reporter: applied jinja2
+* smtpd: applied jinja2
+* requirements: added jinja2
+* sample: updated tenant.conf
+
+0.8
+---
+
+* ChangeLog: updated
 * renamed tempml as amane
 * ChangeLog: updated
 
@@ -22,10 +39,10 @@ CHANGES
 
 * ChangeLog: updated
 * README: updated
-* Revert "const: added SMTP_STATUS_NOT_TEXT_MESSAGE"
-* smtpd: added ensure_multipart()
+* Revert "const: added SMTP\_STATUS\_NOT\_TEXT\_MESSAGE"
+* smtpd: added ensure\_multipart()
 * smtpd: reject non-text messages
-* const: added SMTP_STATUS_NOT_TEXT_MESSAGE
+* const: added SMTP\_STATUS\_NOT\_TEXT\_MESSAGE
 * ctl: created
 * sample: modified for multi-tenancy
 * Support multi-tenancy
@@ -37,7 +54,7 @@ CHANGES
 
 * ChangeLog: updated
 * reviewer: created
-* smtpd, reporter: added STATUS_NEW
+* smtpd, reporter: added STATUS\_NEW
 * smtpd: updated sample config file
 * ChangeLog: updated
 * smtpd: fixed log-file handling
@@ -50,55 +67,55 @@ CHANGES
 * README: updated
 * ChangeLog: updated
 * smtpd: modified the header docstring
-* smtpd: replace *_files options with *_msg
+* smtpd: replace \*\_files options with \*\_msg
 * smtpd: use YAML for config
-* smtpd: renamed from smtp_handler
+* smtpd: renamed from smtp\_handler
 * ChangeLog: updated
 * ChangeLog: updated
 * reporter: created
-* db: added find_mls()
-* db: added find_mls()
+* db: added find\_mls()
+* db: added find\_mls()
 
 0.4
 ---
 
 * ChangeLog: updated
-* smtp_handler: fixed a param bug on creating a ML
-* smtp_handler: replaced self.domain with self.at_domain
-* db: added subject param to create_ml()
+* smtp\_handler: fixed a param bug on creating a ML
+* smtp\_handler: replaced self.domain with self.at\_domain
+* db: added subject param to create\_ml()
 * ChangeLog: updated
-* smtp_handler: improved subject: handling
-* smtp_handler: removed send_post() on creating a ML
-* smtp_handler: make members of send_post() a param
-* smtp_handler: added status handling
-* smtp_handler: PEP8
-* db: added change_ml_status()
-* smtp_handler: make messages attached files
-* smtp_handler: modified mis-spells of 'goodbye'
+* smtp\_handler: improved subject: handling
+* smtp\_handler: removed send\_post() on creating a ML
+* smtp\_handler: make members  of send\_post() a param
+* smtp\_handler: added status handling
+* smtp\_handler: PEP8
+* db: added change\_ml\_status()
+* smtp\_handler: make messages attached files
+* smtp\_handler: modified mis-spells of 'goodbye'
 
 0.3
 ---
 
 * ChangeLog: updated
-* smtp_handler: support welcome, readme and goodby messages
+* smtp\_handler: support welcome, readme and goodby messages
 * ChangeLog: updated
-* smtp_handler: modified a comment
-* smtp_handler: added members keyword to send_post()
-* smtp_handler: improved unit tests for send_post()
-* smtp_handler: don't remove non-delivered members
-* smtp_handler: updated calling __init__() of super-class in TempMlSMTPHandler
-* smtp_handler: applied PEP8
-* smtp_handler: Applied camel-cases to headers
-* smtp_handler: applied Python 3.4
-* smtp_handler: added error handler
-* __main__: removed
+* smtp\_handler: modified a comment
+* smtp\_handler: added members keyword to send\_post()
+* smtp\_handler: improved unit tests for send\_post()
+* smtp\_handler: don't remove non-delivered members
+* smtp\_handler: updated calling \_\_init\_\_() of super-class in TempMlSMTPHandler
+* smtp\_handler: applied PEP8
+* smtp\_handler: Applied camel-cases to headers
+* smtp\_handler: applied Python 3.4
+* smtp\_handler: added error handler
+* \_\_main\_\_: removed
 
 0.2
 ---
 
 * ChangeLog: updated
-* smtp_handler: many improvements and fixes
-* db: fixed a bug in log_post()
+* smtp\_handler: many improvements and fixes
+* db: fixed a bug in log\_post()
 * log: removed handlers option for Python 2.7
 
 0.1
@@ -107,28 +124,28 @@ CHANGES
 * Added AUTHORS and ChangeLog
 * setup: added
 * README: updated
-* test_smtp_handler: python2 support
-* smtp_handler: fix a bug for ml_name_format
-* smtp_handler: rename 'verbose' argument as 'debug'
+* test\_smtp\_handler: python2 support
+* smtp\_handler: fix a bug for ml\_name\_format
+* smtp\_handler: rename 'verbose' argument as 'debug'
 * db: improved logging
-* smtp_handler: improved logging
+* smtp\_handler: improved logging
 * log: added logging configuration
-* test_db: PEP8
-* smtp_handler: reduced logged members
+* test\_db: PEP8
+* smtp\_handler: reduced logged members
 * db: added operation logging for MLs
 * db: added 'by' argument
-* smtp_handler: renamed static_address_list as admin_file
-* smtp_handler: removed importing utils
-* smtp_handler: added
+* smtp\_handler: renamed static\_address\_list as admin\_file
+* smtp\_handler: removed importing utils
+* smtp\_handler: added
 * db: changed members data from list() to set()
-* test_db: PEP8
-* db: return None if no ml found in get_members
+* test\_db: PEP8
+* db: return None if no ml found in get\_members
 * const: added SMTP status
-* db: replace ml_id with ml_name
+* db: replace ml\_id with ml\_name
 * Added db.py as a DB API
 * Added skelton.py for file header
 * Added const.py for Constants
-* Added __init__.py
+* Added \_\_init\_\_.py
 * temporary save
 * Update README.md
 * Initial commit

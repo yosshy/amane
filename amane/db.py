@@ -107,12 +107,12 @@ def create_tenant(tenant_name, by, config):
         "days_to_orphan": config["days_to_orphan"],
         "welcome_msg": config["welcome_msg"],
         "readme_msg": config["readme_msg"],
+        "add_msg": config["add_msg"],
         "remove_msg": config["remove_msg"],
         "reopen_msg": config["reopen_msg"],
         "goodbye_msg": config["goodbye_msg"],
         "report_subject": config["report_subject"],
         "report_msg": config["report_msg"],
-        "report_format": config["report_format"],
         "orphaned_subject": config["orphaned_subject"],
         "orphaned_msg": config["orphaned_msg"],
         "closed_subject": config["closed_subject"],
@@ -490,10 +490,10 @@ def log_post(ml_name, members, by):
     log_dict = {
         "op": const.OP_POST,
         "by": by,
+        "members": list(members),
     }
     DB.ml.find_one_and_update({'ml_name': ml_name},
-                              {'$set': {'members': list(members),
-                                        'updated': datetime.now(),
+                              {'$set': {'updated': datetime.now(),
                                         'by': by},
                                '$push': {'logs': log_dict}})
     if logging.root.level == logging.DEBUG:

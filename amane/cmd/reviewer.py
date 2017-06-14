@@ -23,6 +23,7 @@ import email
 from email.message import Message
 from email.header import Header
 import email_normalize
+from jinja2 import Environment
 import logging
 import os
 import pbr.version
@@ -106,9 +107,8 @@ class Reviewer(object):
                     params = dict(ml_name=ml_name, ml_address=ml_address,
                                   new_ml_address=new_ml_address,
                                   subject=ml['status'])
-                    content = template % params
-                    content = content.replace("\r\n", "\n").\
-                        replace("\n", "\r\n")
+                    temp = Environment(newline_sequence='\r\n')
+                    content = temp.from_string(template).render(params)
                     self.send_post(ml_name, subject, content, members)
                     db.change_ml_status(ml_name, new_status, "reviewer")
                 except:

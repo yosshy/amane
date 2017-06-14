@@ -85,12 +85,12 @@ class NotifyTest(unittest.TestCase):
             "days_to_orphan": 7,
             "welcome_msg": "welcome_msg",
             "readme_msg": "readme_msg",
+            "add_msg": "add_msg",
             "remove_msg": "remove_msg",
             "reopen_msg": "reopen_msg",
             "goodbye_msg": "goodbye_msg",
             "report_subject": "report_subject",
             "report_msg": "report_msg",
-            "report_format": "report_format",
             "orphaned_subject": "orphaned_subject",
             "orphaned_msg": "orphaned_msg",
             "closed_subject": "closed_subject",
@@ -164,15 +164,17 @@ class NotifyTest(unittest.TestCase):
                 tempfile.NamedTemporaryFile(mode="wt") as t5, \
                 tempfile.NamedTemporaryFile(mode="wt") as t6, \
                 tempfile.NamedTemporaryFile(mode="wt") as t7, \
-                tempfile.NamedTemporaryFile(mode="wt") as t8:
+                tempfile.NamedTemporaryFile(mode="wt") as t8, \
+                tempfile.NamedTemporaryFile(mode="wt") as t9:
             t1.write(self.config["welcome_msg"])
             t2.write(self.config["readme_msg"])
-            t3.write(self.config["remove_msg"])
-            t4.write(self.config["reopen_msg"])
-            t5.write(self.config["goodbye_msg"])
-            t6.write(self.config["report_msg"])
-            t7.write(self.config["orphaned_msg"])
-            t8.write(self.config["closed_msg"])
+            t3.write(self.config["add_msg"])
+            t4.write(self.config["remove_msg"])
+            t5.write(self.config["reopen_msg"])
+            t6.write(self.config["goodbye_msg"])
+            t7.write(self.config["report_msg"])
+            t8.write(self.config["orphaned_msg"])
+            t9.write(self.config["closed_msg"])
             t1.seek(0)
             t2.seek(0)
             t3.seek(0)
@@ -181,6 +183,7 @@ class NotifyTest(unittest.TestCase):
             t6.seek(0)
             t7.seek(0)
             t8.seek(0)
+            t9.seek(0)
             result = self.tester(
                 "--config-file", "sample/amane.conf", "tenant", "create",
                 self.tenant_name,
@@ -192,16 +195,16 @@ class NotifyTest(unittest.TestCase):
                 "--new-ml-account", self.config["new_ml_account"],
                 "--welcome-file", t1.name,
                 "--readme-file", t2.name,
-                "--remove-file", t3.name,
-                "--reopen-file", t4.name,
-                "--goodbye-file", t5.name,
+                "--add-file", t3.name,
+                "--remove-file", t4.name,
+                "--reopen-file", t5.name,
+                "--goodbye-file", t6.name,
                 "--report-subject", self.config["report_subject"],
-                "--report-file", t6.name,
-                "--report-format", self.config["report_format"],
+                "--report-file", t7.name,
                 "--orphaned-subject", self.config["orphaned_subject"],
-                "--orphaned-file", t7.name,
+                "--orphaned-file", t8.name,
                 "--closed-subject", self.config["closed_subject"],
-                "--closed-file", t8.name)
+                "--closed-file", t9.name)
         self.assertEqual(result.output, "")
         self.assertEqual(result.exit_code, 0)
         config = fake_db.get_tenant(self.tenant_name)

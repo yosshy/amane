@@ -89,12 +89,12 @@ def tenant(ctx):
 @click.option('--new-ml-account')
 @click.option('--welcome-file', type=click.File('r', encoding='utf-8'))
 @click.option('--readme-file', type=click.File('r', encoding='utf-8'))
+@click.option('--add-file', type=click.File('r', encoding='utf-8'))
 @click.option('--remove-file', type=click.File('r', encoding='utf-8'))
 @click.option('--reopen-file', type=click.File('r', encoding='utf-8'))
 @click.option('--goodbye-file', type=click.File('r', encoding='utf-8'))
 @click.option('--report-subject')
 @click.option('--report-file', type=click.File('r', encoding='utf-8'))
-@click.option('--report-format')
 @click.option('--orphaned-subject')
 @click.option('--orphaned-file', type=click.File('r', encoding='utf-8'))
 @click.option('--closed-subject')
@@ -103,9 +103,9 @@ def tenant(ctx):
 def create_tenant(ctx, name, yamlfile, admin, charset, enable, disable,
                   days_to_close, days_to_orphan,
                   ml_name_format, new_ml_account,
-                  welcome_file, readme_file, remove_file, reopen_file,
-                  goodbye_file,
-                  report_subject, report_file, report_format,
+                  welcome_file, readme_file, add_file,
+                  remove_file, reopen_file, goodbye_file,
+                  report_subject, report_file,
                   orphaned_subject, orphaned_file,
                   closed_subject, closed_file):
     tenant_config = {}
@@ -131,6 +131,8 @@ def create_tenant(ctx, name, yamlfile, admin, charset, enable, disable,
         tenant_config['welcome_msg'] = welcome_file.read()
     if readme_file is not None:
         tenant_config['readme_msg'] = readme_file.read()
+    if add_file is not None:
+        tenant_config['add_msg'] = add_file.read()
     if remove_file is not None:
         tenant_config['remove_msg'] = remove_file.read()
     if goodbye_file is not None:
@@ -141,8 +143,6 @@ def create_tenant(ctx, name, yamlfile, admin, charset, enable, disable,
         tenant_config['report_subject'] = report_subject
     if report_file is not None:
         tenant_config['report_msg'] = report_file.read()
-    if report_format is not None:
-        tenant_config['report_format'] = report_format
     if orphaned_subject is not None:
         tenant_config['orphaned_subject'] = orphaned_subject
     if orphaned_file is not None:
@@ -173,12 +173,12 @@ def create_tenant(ctx, name, yamlfile, admin, charset, enable, disable,
 @click.option('--new-ml-account')
 @click.option('--welcome-file', type=click.File('r', encoding='utf-8'))
 @click.option('--readme-file', type=click.File('r', encoding='utf-8'))
+@click.option('--add-file', type=click.File('r', encoding='utf-8'))
 @click.option('--remove-file', type=click.File('r', encoding='utf-8'))
 @click.option('--reopen-file', type=click.File('r', encoding='utf-8'))
 @click.option('--goodbye-file', type=click.File('r', encoding='utf-8'))
 @click.option('--report-subject')
 @click.option('--report-file', type=click.File('r', encoding='utf-8'))
-@click.option('--report-format')
 @click.option('--orphaned-subject')
 @click.option('--orphaned-file', type=click.File('r', encoding='utf-8'))
 @click.option('--closed-subject')
@@ -187,9 +187,9 @@ def create_tenant(ctx, name, yamlfile, admin, charset, enable, disable,
 def update_tenant(ctx, name, yamlfile, admin, charset, enable, disable,
                   days_to_close, days_to_orphan,
                   ml_name_format, new_ml_account,
-                  welcome_file, readme_file, remove_file, reopen_file,
-                  goodbye_file,
-                  report_subject, report_file, report_format,
+                  welcome_file, readme_file, add_file,
+                  remove_file, reopen_file, goodbye_file,
+                  report_subject, report_file,
                   orphaned_subject, orphaned_file,
                   closed_subject, closed_file):
     tenant_config = {}
@@ -215,6 +215,8 @@ def update_tenant(ctx, name, yamlfile, admin, charset, enable, disable,
         tenant_config['welcome_msg'] = welcome_file.read()
     if readme_file is not None:
         tenant_config['readme_msg'] = readme_file.read()
+    if add_file is not None:
+        tenant_config['add_msg'] = add_file.read()
     if remove_file is not None:
         tenant_config['remove_msg'] = remove_file.read()
     if goodbye_file is not None:
@@ -225,8 +227,6 @@ def update_tenant(ctx, name, yamlfile, admin, charset, enable, disable,
         tenant_config['report_subject'] = report_subject
     if report_file is not None:
         tenant_config['report_msg'] = report_file.read()
-    if report_format is not None:
-        tenant_config['report_format'] = report_format
     if orphaned_subject is not None:
         tenant_config['orphaned_subject'] = orphaned_subject
     if orphaned_file is not None:
