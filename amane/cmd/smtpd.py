@@ -25,6 +25,7 @@ from email.mime.application import MIMEApplication
 from email.mime.multipart import MIMEMultipart
 from email.header import Header, decode_header, make_header
 import email_normalize
+from jinja2 import Environment
 import logging
 import os
 import pbr.version
@@ -158,10 +159,10 @@ class AmaneSMTPServer(smtpd.SMTPServer):
                 db.create_ml(tenant_name, ml_name, subject, members, mailfrom)
                 ml_address = ml_name + self.at_domain
                 params = dict(ml_name=ml_name, ml_address=ml_address,
-                              mailfrom=mailfrom)
+                              mailfrom=mailfrom, members=members)
                 message = ensure_multipart(message, config['charset'])
-                self.send_message(config, ml_name, message, mailfrom, members,
-                                  params, config['welcome_msg'], 'Welcome.txt')
+                self.send_message(config, ml_name, message, mailfrom, params,
+                                  config['welcome_msg'], 'Welcome.txt')
                 return
 
         # Post a message to an existing ML
@@ -181,7 +182,6 @@ class AmaneSMTPServer(smtpd.SMTPServer):
                 logging.error("No such tenant: %s", ml['tenant_name'])
                 return const.SMTP_STATUS_NO_SUCH_TENANT
 
-        params['new_ml_address'] = config['new_ml_account'] + self.at_domain
         message = ensure_multipart(message, config['charset'])
 
         # Checking whether the sender is one of the ML members
@@ -190,12 +190,18 @@ class AmaneSMTPServer(smtpd.SMTPServer):
             logging.error("Non-member post")
             return const.SMTP_STATUS_NOT_MEMBER
 
+        # Update parameters
+        new_ml_address = config['new_ml_account'] + self.at_domain
+        params = dict(ml_name=ml_name, ml_address=ml_address,
+                      mailfrom=mailfrom, new_ml_address=new_ml_address,
+                      members=members)
+
         # Check ML status
         ml_status = ml['status']
         if ml_status == const.STATUS_CLOSED:
             if command == "reopen":
-                self.send_message(config, ml_name, message, mailfrom, members,
-                                  params, config['reopen_msg'], 'Reopen.txt')
+                self.send_message(config, ml_name, message, mailfrom, params,
+                                  config['reopen_msg'], 'Reopen.txt')
                 db.change_ml_status(ml_name, const.STATUS_OPEN, mailfrom)
                 logging.info("reopened %s by %s", ml_name, mailfrom)
                 return
@@ -204,8 +210,8 @@ class AmaneSMTPServer(smtpd.SMTPServer):
             return const.SMTP_STATUS_CLOSED_ML
 
         elif command == "close":
-            self.send_message(config, ml_name, message, mailfrom, members,
-                              params, config['goodbye_msg'], 'Goodbye.txt')
+            self.send_message(config, ml_name, message, mailfrom, params,
+                              config['goodbye_msg'], 'Goodbye.txt')
             db.change_ml_status(ml_name, const.STATUS_CLOSED, mailfrom)
             logging.info("closed %s by %s", ml_name, mailfrom)
             return
@@ -215,15 +221,14 @@ class AmaneSMTPServer(smtpd.SMTPServer):
 
         # Remove admin members from cc
         cc -= config['admins']
-        params = dict(ml_name=ml_name, ml_address=ml_address,
-                      mailfrom=mailfrom, cc="\r\n".join(list(cc)))
+        params["cc"] = cc
 
         # Remove cc'd members from the ML members if the subject is empty
         if command == "":
             if len(cc) > 0:
-                self.send_message(config, ml_name, message, mailfrom,
-                                  members - cc, params, config['remove_msg'],
-                                  'RemoveMembers.txt')
+                params['members'] = members - cc
+                self.send_message(config, ml_name, message, mailfrom, params,
+                                  config['remove_msg'], 'RemoveMembers.txt')
                 db.del_members(ml_name, cc, mailfrom)
                 logging.info("removed %s from %s", cc, ml_name)
             return
@@ -233,19 +238,19 @@ class AmaneSMTPServer(smtpd.SMTPServer):
             db.add_members(ml_name, cc, mailfrom)
             logging.info("added %s into %s", cc, ml_name)
             members = db.get_members(ml_name)
+            params['members'] = members
 
         # Attach readme and send the post
-        self.send_message(config, ml_name, message, mailfrom, members, params,
+        self.send_message(config, ml_name, message, mailfrom, params,
                           config['readme_msg'], 'Readme.txt')
 
-    def send_message(self, config, ml_name, message, mailfrom, members, params,
+    def send_message(self, config, ml_name, message, mailfrom, params,
                      template, filename, charset="utf-8"):
         try:
             content = ""
             if template:
-                content = template % params
-                content = content.replace("\r\n", "\n").replace("\n", "\r\n")
-            content += "\r\n".join(list(members))
+                temp = Environment(newline_sequence='\r\n')
+                content = temp.from_string(template).render(params)
             part = MIMEText(content, _charset=charset)
             part.set_param('name', filename)
             message.attach(part)
