@@ -239,6 +239,9 @@ class AmaneSMTPServer(smtpd.SMTPServer):
             logging.info("added %s into %s", cc, ml_name)
             members = db.get_members(ml_name)
             params['members'] = members
+            self.send_message(config, ml_name, message, mailfrom, params,
+                              config['add_msg'], 'AddMembers.txt')
+            return
 
         # Attach readme and send the post
         self.send_message(config, ml_name, message, mailfrom, params,
