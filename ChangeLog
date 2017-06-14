@@ -1,6 +1,10 @@
 CHANGES
 =======
 
+* const: modified 2 ops
+* db: don't update members on post
+* Attach 'AddMembers.txt' for new members
+* ChangeLog: updated
 * README: updated
 * sample: applied jinja2
 * reviewer: applied jinja2
