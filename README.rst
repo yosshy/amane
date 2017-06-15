@@ -8,8 +8,8 @@ Introduction
 Amane is an instant mailing list manager. Its basic idea has come from
 QuickML (https://github.com/masui/QuickML) but it's not the same.
 QuickML is a common easy-to-use mailing list manager, but Amane has
-been developed to manage asking mails. So Amane is a kind of ticket
-management system like Redmine.
+been developed to manage requests by email. So Amane is a kind of
+ticket management system like Redmine.
 
 Difference between QuickML and Amane
 ------------------------------------
@@ -42,7 +42,7 @@ Difference between Redmine and Amane
 How to use Amane
 ================
 
-Creating a new mailing list (ticket)
+Creating a new ticket
   Send a mail to the specific mail address (e.g. ask@example.com \*1)
   to create new one. Amane will create a new mailing list with its own
   mail address (e.g. ml-000001@example.com) and forward the initial
@@ -51,14 +51,14 @@ Creating a new mailing list (ticket)
 Making a new post
   Send a mail to the mailing list address (e.g. ml-000001@example.com).
 
-Adding members
+Register new members
   Send a mail with new addresses as Cc: to the mailing list address.
 
-Removing members
+Unregister members
   Send a mail with empty Subject: and addresses to be removed as Cc:
   to the mailing list address.
 
-Closing the mailing list
+Closing the ticket
   Send a mail with "Subject: close" to the mailing list address.
 
 
