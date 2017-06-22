@@ -69,11 +69,12 @@ class NotifyTest(unittest.TestCase):
     def tearDown(self):
         fake_db.clear_db()
 
-    def _send_post(self, ml_name, subject, content, members):
+    def _send_post(self, ml_name, subject, content, members, charset):
         self.ml_name_arg = ml_name
         self.subject_arg = subject
         self.content_arg = content
         self.members_arg = members
+        self.charset_arg = charset
 
     @mock.patch('amane.db', fake_db)
     @mock.patch('smtpd.SMTPServer', DummySMTPServer)
@@ -115,7 +116,8 @@ class NotifyTest(unittest.TestCase):
             relay_port=1025,
             db_url="mongodb://localhost",
             db_name=self.db_name,
-            domain="example.net")
+            domain="example.net",
+            charset="iso-2022-jp")
 
         with mock.patch.object(self.reviewer, 'send_post') as m:
             m.side_effect = self._send_post

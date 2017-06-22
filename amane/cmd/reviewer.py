@@ -90,6 +90,7 @@ class Reviewer(object):
                 days = config['days_to_orphan']
                 subject = config['orphaned_subject']
                 template = config['orphaned_msg']
+            charset = config['charset']
 
             updated_after = datetime.now() - timedelta(days=days, hours=-1)
             logging.debug("updated_after: %s", updated_after)
@@ -109,13 +110,13 @@ class Reviewer(object):
                                   subject=ml['status'])
                     temp = Environment(newline_sequence='\r\n')
                     content = temp.from_string(template).render(params)
-                    self.send_post(ml_name, subject, content, members)
+                    self.send_post(ml_name, subject, content, members, charset)
                     db.change_ml_status(ml_name, new_status, "reviewer")
                 except:
                     raise
                     pass
 
-    def send_post(self, ml_name, subject, content, members):
+    def send_post(self, ml_name, subject, content, members, charset):
         """
         Send a post to the ML members
 
@@ -127,6 +128,8 @@ class Reviewer(object):
         :type content: str
         :param members: Recipients
         :type members: set(str)
+        :param charset: Character encoding
+        :type charset: str
         :rtype: None
         """
         # Format the post
@@ -135,9 +138,9 @@ class Reviewer(object):
         message = Message()
         message['To'] = message['Reply-To'] = _to
         message['From'] = message['Return-Path'] = _from
-        message['Subject'] = Header(subject, self.charset)
-        message.set_payload(content.encode(self.charset))
-        message.set_charset(self.charset)
+        message['Subject'] = Header(subject, charset)
+        message.set_payload(content.encode(charset))
+        message.set_charset(charset)
 
         # Send a post to the relay host
         relay = smtplib.SMTP(self.relay_host, self.relay_port)
