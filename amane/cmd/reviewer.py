@@ -146,10 +146,10 @@ class Reviewer(object):
         relay = smtplib.SMTP(self.relay_host, self.relay_port)
         if self.debug:
             relay.set_debuglevel(1)
-        relay.sendmail(_from, members | self.admins, message.as_string())
+        relay.sendmail(_from, members, message.as_string())
         relay.quit()
         logging.info("Sent: ml_name=%s|mailfrom=%s|members=%s|",
-                     ml_name, _from, (members | self.admins))
+                     ml_name, _from, members)
         db.log_post(ml_name, members, "reviewer")
 
 
