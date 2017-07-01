@@ -1,6 +1,18 @@
 CHANGES
 =======
 
+* reviewer: improved coverage
+* ctl: fixed exit status bugs
+* setup: modified Environment
+* reviewer: fixed a bug for admins
+* reviewer: fixed a bug for charset
+* setup: updated
+* README: updated
+* ctl: applied normalize()
+* test\_ctl: improved test coverage
+* fake\_db: fixed a bug in update\_tenant()
+* ChangeLog: updated
+
 0.9.5
 -----
 
