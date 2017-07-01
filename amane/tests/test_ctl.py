@@ -126,11 +126,23 @@ class NotifyTest(unittest.TestCase):
         for key, value in TENANT_CONFIG.items():
             self.assertEqual(config[key], value)
 
+    def test_show_non_existing_tenant(self):
+        result = self.tester(
+            "--config-file", "sample/amane.conf", "tenant", "show",
+            "foo")
+        self.assertEqual(result.exit_code, 1)
+
     def test_delete_tenant(self):
         result = self.tester(
             "--config-file", "sample/amane.conf", "tenant", "delete",
             self.tenant_name)
         self.assertEqual(result.exit_code, 0)
+
+    def test_delete_non_existing_tenant(self):
+        result = self.tester(
+            "--config-file", "sample/amane.conf", "tenant", "delete",
+            "foo")
+        self.assertEqual(result.exit_code, 1)
 
     def test_create_tenant_by_yaml(self):
         fake_db.clear_db()
@@ -269,3 +281,12 @@ class NotifyTest(unittest.TestCase):
         config = fake_db.get_tenant(self.tenant_name)
         for key, value in TENANT_CONFIG.items():
             self.assertEqual(config[key], value)
+
+    def test_update_non_existing_tenant(self):
+        with tempfile.NamedTemporaryFile(mode="wt") as t:
+            logging.debug("TempFile: %s", t.name)
+            yaml.dump(TENANT_CONFIG, t)
+            result = self.tester(
+                "--config-file", "sample/amane.conf", "tenant", "update",
+                "foo", "--yamlfile", t.name)
+        self.assertEqual(result.exit_code, 1)
