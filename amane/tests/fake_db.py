@@ -149,15 +149,16 @@ def update_tenant(tenant_name, by, **config):
     :type config: dict
     :rtype: None
     """
+    logging.debug("fake_db: update_tenant")
     global TENANTS
-    tenant = TENANTS[tenant_name]
+    tenant = TENANTS.get(tenant_name)
     if tenant is None:
         logging.error("Tenant %s not found", tenant_name)
         return
 
     if 'new_ml_account' in config:
         new_ml_account = config['new_ml_account']
-        for t in TENANTS:
+        for t in TENANTS.values():
             if t == tenant:
                 continue
             if t['new_ml_account'] != new_ml_account:
@@ -180,7 +181,7 @@ def update_tenant(tenant_name, by, **config):
         if key in ["tenant_name", "by", "created", "updated", "logs"]:
             continue
         if key not in tenant:
-            config.pop(key)
+            continue
         tenant[key] = value
     tenant["updated"] = datetime.now()
 
