@@ -22,7 +22,6 @@ from datetime import datetime, timedelta
 import email
 from email.message import Message
 from email.header import Header
-import email_normalize
 from jinja2 import Environment
 import logging
 import os
@@ -40,19 +39,6 @@ from amane import log
 CONFIG_FILE = os.environ.get("AMANE_CONFIG_FILE", "/etc/amane/amane.conf")
 ERROR_SUFFIX = '-error'
 REMOVE_RFC822 = re.compile("rfc822;", re.I)
-
-
-def normalize(addresses):
-    logging.debug(addresses)
-    result = []
-    for address in addresses:
-        try:
-            cleaned = email_normalize.normalize(address, resolve=False)
-            if isinstance(cleaned, str):
-                result.append(cleaned)
-        except:
-            pass
-    return set(result)
 
 
 class Reviewer(object):
@@ -113,7 +99,6 @@ class Reviewer(object):
                     self.send_post(ml_name, subject, content, members, charset)
                     db.change_ml_status(ml_name, new_status, "reviewer")
                 except:
-                    raise
                     pass
 
     def send_post(self, ml_name, subject, content, members, charset):
