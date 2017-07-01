@@ -112,7 +112,7 @@ def create_tenant(ctx, name, yamlfile, admin, charset, enable, disable,
     if yamlfile:
         tenant_config = yaml.load(yamlfile.read())
     if len(admin) > 0:
-        tenant_config['admins'] = set(admin)
+        tenant_config['admins'] = normalize(admin)
     if charset is not None:
         tenant_config['charset'] = charset
     if enable is True:
@@ -157,7 +157,6 @@ def create_tenant(ctx, name, yamlfile, admin, charset, enable, disable,
     config = ctx.obj['config']
     db.init_db(config['db_url'],  config['db_name'])
     db.create_tenant(name, "CLI", tenant_config)
-    return 0
 
 
 @tenant.command('update', help='Update parameters of a tenant')
@@ -192,11 +191,15 @@ def update_tenant(ctx, name, yamlfile, admin, charset, enable, disable,
                   report_subject, report_file,
                   orphaned_subject, orphaned_file,
                   closed_subject, closed_file):
+    tenant = db.get_tenant(name)
+    if tenant is None:
+        logging.error("tenant %s not found", name)
+        ctx.exit(1)
     tenant_config = {}
     if yamlfile:
         tenant_config = yaml.load(yamlfile.read())
     if len(admin) > 0:
-        tenant_config['admins'] = set(admin)
+        tenant_config['admins'] = normalize(admin)
     if charset is not None:
         tenant_config['charset'] = charset
     if enable is True:
@@ -241,7 +244,6 @@ def update_tenant(ctx, name, yamlfile, admin, charset, enable, disable,
     config = ctx.obj['config']
     db.init_db(config['db_url'],  config['db_name'])
     db.update_tenant(name, "CLI", **tenant_config)
-    return 0
 
 
 @tenant.command('show', help='Show parameters of a tenant')
@@ -253,12 +255,11 @@ def show_tenant(ctx, name):
     tenant = db.get_tenant(name)
     if tenant is None:
         logging.error("tenant %s not found", name)
-        return 1
+        ctx.exit(1)
     for key in ['_id', 'logs']:
         if key in tenant:
             del tenant[key]
     print(yaml.dump(tenant, allow_unicode=True, line_break='|'))
-    return 0
 
 
 @tenant.command('list', help='List tenants')
@@ -269,7 +270,6 @@ def list_tenant(ctx):
     tenants = db.find_tenants({})
     for tenant in tenants:
         print("%(tenant_name)s: %(status)s %(created)s" % tenant)
-    return 0
 
 
 @tenant.command('delete', help='Delete a tenant')
@@ -281,10 +281,9 @@ def delete_tenant(ctx, name):
     tenant = db.get_tenant(name)
     if tenant is None:
         logging.error("tenant %s not found", name)
-        return 1
+        ctx.exit(1)
     db.delete_tenant(name)
-    return 0
 
 
 if __name__ == '__main__':
-    sys.exit(cli(obj={}))
+    cli(obj={})

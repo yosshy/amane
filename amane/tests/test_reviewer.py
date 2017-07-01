@@ -69,11 +69,12 @@ class NotifyTest(unittest.TestCase):
     def tearDown(self):
         fake_db.clear_db()
 
-    def _send_post(self, ml_name, subject, content, members):
+    def _send_post(self, ml_name, subject, content, members, charset):
         self.ml_name_arg = ml_name
         self.subject_arg = subject
         self.content_arg = content
         self.members_arg = members
+        self.charset_arg = charset
 
     @mock.patch('amane.db', fake_db)
     @mock.patch('smtpd.SMTPServer', DummySMTPServer)
@@ -115,7 +116,8 @@ class NotifyTest(unittest.TestCase):
             relay_port=1025,
             db_url="mongodb://localhost",
             db_name=self.db_name,
-            domain="example.net")
+            domain="example.net",
+            charset="iso-2022-jp")
 
         with mock.patch.object(self.reviewer, 'send_post') as m:
             m.side_effect = self._send_post
@@ -146,3 +148,85 @@ class NotifyTest(unittest.TestCase):
 
     def test_open_altered(self):
         self._test(const.STATUS_OPEN, const.STATUS_ORPHANED, -1, True)
+
+
+class SendPostTest(unittest.TestCase):
+    """send_post() tests"""
+
+    @mock.patch('amane.db', fake_db)
+    @mock.patch('smtpd.SMTPServer', DummySMTPServer)
+    def setUp(self):
+        self.db_name = "test%04d" % random.randint(0, 1000)
+        self.tenant_name = "tenant1"
+        self.members = None
+        self.message = None
+
+        config = {
+            "admins": {"hoge"},
+            "charset": "iso-2022-jp",
+            "ml_name_format": "ml-%06d",
+            "new_ml_account": "new",
+            "days_to_close": 7,
+            "days_to_orphan": 7,
+            "welcome_msg": "welcome_msg",
+            "readme_msg": "readme_msg",
+            "add_msg": "add_msg",
+            "remove_msg": "remove_msg",
+            "reopen_msg": "reopen_msg",
+            "goodbye_msg": "goodbye_msg",
+            "report_subject": "report_subject",
+            "report_msg": "report_msg",
+            "orphaned_subject": "orphaned_subject",
+            "orphaned_msg": "orphaned_msg",
+            "closed_subject": "closed_subject",
+            "closed_msg": "closed_msg",
+        }
+        fake_db.create_tenant(self.tenant_name, "hoge", config)
+
+        from amane.cmd import reviewer
+        self.reviewer = reviewer.Reviewer(
+            relay_host="localhost",
+            relay_port=1025,
+            db_url="mongodb://localhost",
+            db_name=self.db_name,
+            domain="example.net",
+            charset="iso-2022-jp")
+
+    def tearDown(self):
+        fake_db.clear_db()
+
+    def _sendmail(self, _from, members, message):
+        self.members = members
+        self.message = message
+
+    @mock.patch('amane.cmd.reviewer.smtplib.SMTP', DummySMTPClient)
+    def test_no_cc(self):
+        members = {"test1@example.com", "test2@example.com",
+                   "test3@example.com", "test4@example.com"}
+        fake_db.create_ml(self.tenant_name, 'ml-000010', "hoge", members,
+                          "test1@example.com")
+        msg = 'From: Test1 <test1@example.com>\n' \
+              'To: ml-000010 <ml-000010@example.net>\n' \
+              'Subject: test\n' \
+              'Content-Type: Multipart/Mixed; boundary="hoge"\n' \
+              'Content-Transfer-Encoding: 7bit\n' \
+              '\n' \
+              '--hoge\n' \
+              'Content-Type: Text/Plain; charset=US-ASCII\n' \
+              'Content-Transfer-Encoding: 7bit\n' \
+              '\n' \
+              'Test mail\n' \
+              '\n' \
+              '--hoge\n'
+        msg_obj = email.message_from_string(msg)
+
+        with mock.patch.object(DummySMTPClient, 'sendmail') as m:
+            m.side_effect = self._sendmail
+            self.reviewer.send_post('ml-000010', "subject", msg, members, "iso-2022-jp")
+            self.assertEqual(self.members, members)
+            message = email.message_from_string(self.message)
+            self.assertEqual(message['to'], 'ml-000010@example.net')
+            self.assertEqual(message['reply-to'], 'ml-000010@example.net')
+            self.assertEqual(message.get('cc', ''), '')
+            self.assertEqual(message['subject'],
+                             '=?iso-2022-jp?b?c3ViamVjdA==?=')

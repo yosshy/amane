@@ -40,6 +40,26 @@ log.setup(debug=True)
 
 
 ML_NAME = "test-%06d"
+TENANT_CONFIG = {
+    "admins": {"hoge@example.com"},
+    "charset": "iso-2022-jp",
+    "ml_name_format": "ml-%06d",
+    "new_ml_account": "new",
+    "days_to_close": 7,
+    "days_to_orphan": 7,
+    "welcome_msg": "welcome_msg",
+    "readme_msg": "readme_msg",
+    "add_msg": "add_msg",
+    "remove_msg": "remove_msg",
+    "reopen_msg": "reopen_msg",
+    "goodbye_msg": "goodbye_msg",
+    "report_subject": "report_subject",
+    "report_msg": "report_msg",
+    "orphaned_subject": "orphaned_subject",
+    "orphaned_msg": "orphaned_msg",
+    "closed_subject": "closed_subject",
+    "closed_msg": "closed_msg",
+}
 
 
 class DummySMTPServer(object):
@@ -76,27 +96,8 @@ class NotifyTest(unittest.TestCase):
 
         fake_db.init_db("", self.db_name)
         self.tenant_name = "tenant1"
-        self.config = {
-            "admins": {"hoge"},
-            "charset": "iso-2022-jp",
-            "ml_name_format": "ml-%06d",
-            "new_ml_account": "new",
-            "days_to_close": 7,
-            "days_to_orphan": 7,
-            "welcome_msg": "welcome_msg",
-            "readme_msg": "readme_msg",
-            "add_msg": "add_msg",
-            "remove_msg": "remove_msg",
-            "reopen_msg": "reopen_msg",
-            "goodbye_msg": "goodbye_msg",
-            "report_subject": "report_subject",
-            "report_msg": "report_msg",
-            "orphaned_subject": "orphaned_subject",
-            "orphaned_msg": "orphaned_msg",
-            "closed_subject": "closed_subject",
-            "closed_msg": "closed_msg",
-        }
-        fake_db.create_tenant(self.tenant_name, "hoge", self.config)
+        fake_db.create_tenant(self.tenant_name, "hoge@example.com",
+                              TENANT_CONFIG)
 
         self.ctx = mock.MagicMock()
         self.ctx.obj = dict(
@@ -122,18 +123,14 @@ class NotifyTest(unittest.TestCase):
             self.tenant_name)
         self.assertEqual(result.exit_code, 0)
         config = yaml.load(result.output)
-        for key, value in self.config.items():
+        for key, value in TENANT_CONFIG.items():
             self.assertEqual(config[key], value)
 
-    def test_update_tenant(self):
+    def test_show_non_existing_tenant(self):
         result = self.tester(
-            "--config-file", "sample/amane.conf", "tenant", "update",
-            "--days-to-orphan", "14",
-            self.tenant_name)
-        self.assertEqual(result.output, "")
-        self.assertEqual(result.exit_code, 0)
-        config = fake_db.get_tenant(self.tenant_name)
-        self.assertEqual(config["days_to_orphan"], 14)
+            "--config-file", "sample/amane.conf", "tenant", "show",
+            "foo")
+        self.assertEqual(result.exit_code, 1)
 
     def test_delete_tenant(self):
         result = self.tester(
@@ -141,18 +138,24 @@ class NotifyTest(unittest.TestCase):
             self.tenant_name)
         self.assertEqual(result.exit_code, 0)
 
+    def test_delete_non_existing_tenant(self):
+        result = self.tester(
+            "--config-file", "sample/amane.conf", "tenant", "delete",
+            "foo")
+        self.assertEqual(result.exit_code, 1)
+
     def test_create_tenant_by_yaml(self):
         fake_db.clear_db()
         with tempfile.NamedTemporaryFile(mode="wt") as t:
             logging.debug("TempFile: %s", t.name)
-            yaml.dump(self.config, t)
+            yaml.dump(TENANT_CONFIG, t)
             result = self.tester(
                 "--config-file", "sample/amane.conf", "tenant", "create",
                 self.tenant_name, "--yamlfile", t.name)
         self.assertEqual(result.exit_code, 0)
         self.assertEqual(result.output, "")
         config = fake_db.get_tenant(self.tenant_name)
-        for key, value in self.config.items():
+        for key, value in TENANT_CONFIG.items():
             self.assertEqual(config[key], value)
 
     def test_create_tenant_by_opt(self):
@@ -166,15 +169,15 @@ class NotifyTest(unittest.TestCase):
                 tempfile.NamedTemporaryFile(mode="wt") as t7, \
                 tempfile.NamedTemporaryFile(mode="wt") as t8, \
                 tempfile.NamedTemporaryFile(mode="wt") as t9:
-            t1.write(self.config["welcome_msg"])
-            t2.write(self.config["readme_msg"])
-            t3.write(self.config["add_msg"])
-            t4.write(self.config["remove_msg"])
-            t5.write(self.config["reopen_msg"])
-            t6.write(self.config["goodbye_msg"])
-            t7.write(self.config["report_msg"])
-            t8.write(self.config["orphaned_msg"])
-            t9.write(self.config["closed_msg"])
+            t1.write(TENANT_CONFIG["welcome_msg"])
+            t2.write(TENANT_CONFIG["readme_msg"])
+            t3.write(TENANT_CONFIG["add_msg"])
+            t4.write(TENANT_CONFIG["remove_msg"])
+            t5.write(TENANT_CONFIG["reopen_msg"])
+            t6.write(TENANT_CONFIG["goodbye_msg"])
+            t7.write(TENANT_CONFIG["report_msg"])
+            t8.write(TENANT_CONFIG["orphaned_msg"])
+            t9.write(TENANT_CONFIG["closed_msg"])
             t1.seek(0)
             t2.seek(0)
             t3.seek(0)
@@ -187,26 +190,103 @@ class NotifyTest(unittest.TestCase):
             result = self.tester(
                 "--config-file", "sample/amane.conf", "tenant", "create",
                 self.tenant_name,
-                "--admin", "hoge",
-                "--charset", self.config["charset"],
-                "--days-to-close", self.config["days_to_close"],
-                "--days-to-orphan", self.config["days_to_orphan"],
-                "--ml-name-format", self.config["ml_name_format"],
-                "--new-ml-account", self.config["new_ml_account"],
+                "--admin", "hoge@example.com",
+                "--charset", TENANT_CONFIG["charset"],
+                "--days-to-close", TENANT_CONFIG["days_to_close"],
+                "--days-to-orphan", TENANT_CONFIG["days_to_orphan"],
+                "--ml-name-format", TENANT_CONFIG["ml_name_format"],
+                "--new-ml-account", TENANT_CONFIG["new_ml_account"],
                 "--welcome-file", t1.name,
                 "--readme-file", t2.name,
                 "--add-file", t3.name,
                 "--remove-file", t4.name,
                 "--reopen-file", t5.name,
                 "--goodbye-file", t6.name,
-                "--report-subject", self.config["report_subject"],
+                "--report-subject", TENANT_CONFIG["report_subject"],
                 "--report-file", t7.name,
-                "--orphaned-subject", self.config["orphaned_subject"],
+                "--orphaned-subject", TENANT_CONFIG["orphaned_subject"],
                 "--orphaned-file", t8.name,
-                "--closed-subject", self.config["closed_subject"],
+                "--closed-subject", TENANT_CONFIG["closed_subject"],
                 "--closed-file", t9.name)
         self.assertEqual(result.output, "")
         self.assertEqual(result.exit_code, 0)
         config = fake_db.get_tenant(self.tenant_name)
-        for key, value in self.config.items():
+        for key, value in TENANT_CONFIG.items():
             self.assertEqual(config[key], value)
+
+    def test_update_tenant_by_yaml(self):
+        with tempfile.NamedTemporaryFile(mode="wt") as t:
+            logging.debug("TempFile: %s", t.name)
+            yaml.dump(TENANT_CONFIG, t)
+            result = self.tester(
+                "--config-file", "sample/amane.conf", "tenant", "update",
+                self.tenant_name, "--yamlfile", t.name)
+        self.assertEqual(result.exit_code, 0)
+        self.assertEqual(result.output, "")
+        config = fake_db.get_tenant(self.tenant_name)
+        for key, value in TENANT_CONFIG.items():
+            self.assertEqual(config[key], value)
+
+    def test_update_tenant_by_opt(self):
+        with tempfile.NamedTemporaryFile(mode="wt") as t1, \
+                tempfile.NamedTemporaryFile(mode="wt") as t2, \
+                tempfile.NamedTemporaryFile(mode="wt") as t3, \
+                tempfile.NamedTemporaryFile(mode="wt") as t4, \
+                tempfile.NamedTemporaryFile(mode="wt") as t5, \
+                tempfile.NamedTemporaryFile(mode="wt") as t6, \
+                tempfile.NamedTemporaryFile(mode="wt") as t7, \
+                tempfile.NamedTemporaryFile(mode="wt") as t8, \
+                tempfile.NamedTemporaryFile(mode="wt") as t9:
+            t1.write(TENANT_CONFIG["welcome_msg"])
+            t2.write(TENANT_CONFIG["readme_msg"])
+            t3.write(TENANT_CONFIG["add_msg"])
+            t4.write(TENANT_CONFIG["remove_msg"])
+            t5.write(TENANT_CONFIG["reopen_msg"])
+            t6.write(TENANT_CONFIG["goodbye_msg"])
+            t7.write(TENANT_CONFIG["report_msg"])
+            t8.write(TENANT_CONFIG["orphaned_msg"])
+            t9.write(TENANT_CONFIG["closed_msg"])
+            t1.seek(0)
+            t2.seek(0)
+            t3.seek(0)
+            t4.seek(0)
+            t5.seek(0)
+            t6.seek(0)
+            t7.seek(0)
+            t8.seek(0)
+            t9.seek(0)
+            result = self.tester(
+                "--config-file", "sample/amane.conf", "tenant", "update",
+                self.tenant_name,
+                "--admin", "hoge@example.com",
+                "--charset", TENANT_CONFIG["charset"],
+                "--days-to-close", TENANT_CONFIG["days_to_close"],
+                "--days-to-orphan", TENANT_CONFIG["days_to_orphan"],
+                "--ml-name-format", TENANT_CONFIG["ml_name_format"],
+                "--new-ml-account", TENANT_CONFIG["new_ml_account"],
+                "--welcome-file", t1.name,
+                "--readme-file", t2.name,
+                "--add-file", t3.name,
+                "--remove-file", t4.name,
+                "--reopen-file", t5.name,
+                "--goodbye-file", t6.name,
+                "--report-subject", TENANT_CONFIG["report_subject"],
+                "--report-file", t7.name,
+                "--orphaned-subject", TENANT_CONFIG["orphaned_subject"],
+                "--orphaned-file", t8.name,
+                "--closed-subject", TENANT_CONFIG["closed_subject"],
+                "--closed-file", t9.name)
+        self.assertEqual(result.output, "")
+        self.assertEqual(result.exit_code, 0)
+        config = fake_db.get_tenant(self.tenant_name)
+        for key, value in TENANT_CONFIG.items():
+            self.assertEqual(config[key], value)
+
+    def test_update_non_existing_tenant(self):
+        with tempfile.NamedTemporaryFile(mode="wt") as t:
+            logging.debug("TempFile: %s", t.name)
+            yaml.dump(TENANT_CONFIG, t)
+            result = self.tester(
+                "--config-file", "sample/amane.conf", "tenant", "update",
+                "foo", "--yamlfile", t.name)
+        self.assertEqual(result.exit_code, 1)

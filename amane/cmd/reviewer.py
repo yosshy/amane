@@ -22,7 +22,6 @@ from datetime import datetime, timedelta
 import email
 from email.message import Message
 from email.header import Header
-import email_normalize
 from jinja2 import Environment
 import logging
 import os
@@ -40,19 +39,6 @@ from amane import log
 CONFIG_FILE = os.environ.get("AMANE_CONFIG_FILE", "/etc/amane/amane.conf")
 ERROR_SUFFIX = '-error'
 REMOVE_RFC822 = re.compile("rfc822;", re.I)
-
-
-def normalize(addresses):
-    logging.debug(addresses)
-    result = []
-    for address in addresses:
-        try:
-            cleaned = email_normalize.normalize(address, resolve=False)
-            if isinstance(cleaned, str):
-                result.append(cleaned)
-        except:
-            pass
-    return set(result)
 
 
 class Reviewer(object):
@@ -90,6 +76,7 @@ class Reviewer(object):
                 days = config['days_to_orphan']
                 subject = config['orphaned_subject']
                 template = config['orphaned_msg']
+            charset = config['charset']
 
             updated_after = datetime.now() - timedelta(days=days, hours=-1)
             logging.debug("updated_after: %s", updated_after)
@@ -109,13 +96,12 @@ class Reviewer(object):
                                   subject=ml['status'])
                     temp = Environment(newline_sequence='\r\n')
                     content = temp.from_string(template).render(params)
-                    self.send_post(ml_name, subject, content, members)
+                    self.send_post(ml_name, subject, content, members, charset)
                     db.change_ml_status(ml_name, new_status, "reviewer")
                 except:
-                    raise
                     pass
 
-    def send_post(self, ml_name, subject, content, members):
+    def send_post(self, ml_name, subject, content, members, charset):
         """
         Send a post to the ML members
 
@@ -127,6 +113,8 @@ class Reviewer(object):
         :type content: str
         :param members: Recipients
         :type members: set(str)
+        :param charset: Character encoding
+        :type charset: str
         :rtype: None
         """
         # Format the post
@@ -135,18 +123,18 @@ class Reviewer(object):
         message = Message()
         message['To'] = message['Reply-To'] = _to
         message['From'] = message['Return-Path'] = _from
-        message['Subject'] = Header(subject, self.charset)
-        message.set_payload(content.encode(self.charset))
-        message.set_charset(self.charset)
+        message['Subject'] = Header(subject, charset)
+        message.set_payload(content.encode(charset))
+        message.set_charset(charset)
 
         # Send a post to the relay host
         relay = smtplib.SMTP(self.relay_host, self.relay_port)
         if self.debug:
             relay.set_debuglevel(1)
-        relay.sendmail(_from, members | self.admins, message.as_string())
+        relay.sendmail(_from, members, message.as_string())
         relay.quit()
         logging.info("Sent: ml_name=%s|mailfrom=%s|members=%s|",
-                     ml_name, _from, (members | self.admins))
+                     ml_name, _from, members)
         db.log_post(ml_name, members, "reviewer")
 
 
