@@ -36,11 +36,6 @@ from amane.tests import fake_db
 ML_NAME = "test-%06d"
 
 
-class DummySMTPServer(object):
-    def __init__(self, localaddr, localport, **kwargs):
-        pass
-
-
 class DummySMTPClient(object):
     def __init__(self, host, port):
         pass
@@ -59,7 +54,9 @@ class NotifyTest(unittest.TestCase):
     """notify() tests"""
 
     @mock.patch('amane.db', fake_db)
-    @mock.patch('smtpd.SMTPServer', DummySMTPServer)
+    def run(self, result=None):
+        return super().run(result=result)
+
     def setUp(self):
         self.db_name = "test%04d" % random.randint(0, 1000)
         self.ml_name_arg = None
@@ -76,8 +73,6 @@ class NotifyTest(unittest.TestCase):
         self.members_arg = members
         self.charset_arg = charset
 
-    @mock.patch('amane.db', fake_db)
-    @mock.patch('smtpd.SMTPServer', DummySMTPServer)
     def _test(self, old_status, new_status, days, altered):
         self.tenant_name = "tenant1"
         config = {
@@ -154,7 +149,10 @@ class SendPostTest(unittest.TestCase):
     """send_post() tests"""
 
     @mock.patch('amane.db', fake_db)
-    @mock.patch('smtpd.SMTPServer', DummySMTPServer)
+    @mock.patch('amane.cmd.reviewer.smtplib.SMTP', DummySMTPClient)
+    def run(self, result=None):
+        return super().run(result=result)
+
     def setUp(self):
         self.db_name = "test%04d" % random.randint(0, 1000)
         self.tenant_name = "tenant1"
@@ -199,7 +197,6 @@ class SendPostTest(unittest.TestCase):
         self.members = members
         self.message = message
 
-    @mock.patch('amane.cmd.reviewer.smtplib.SMTP', DummySMTPClient)
     def test_no_cc(self):
         members = {"test1@example.com", "test2@example.com",
                    "test3@example.com", "test4@example.com"}
