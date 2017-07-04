@@ -194,7 +194,6 @@ class SendPostTest(unittest.TestCase):
         self.members = members
         self.message = message
 
-    #@mock.patch('amane.cmd.reviewer.smtplib.SMTP', autospec=True)
     @mock.patch('smtplib.SMTP', autospec=True)
     def test_send_post(self, mock_SMTP):
         members = {"test1@example.com", "test2@example.com",
@@ -215,7 +214,8 @@ class SendPostTest(unittest.TestCase):
               '\n' \
               '--hoge\n'
 
-        self.reviewer.send_post('ml-000010', "subject", msg, members, "iso-2022-jp")
+        self.reviewer.send_post('ml-000010', "subject", msg, members,
+                                "iso-2022-jp")
         mock_SMTP.assert_called_with('localhost', 1025)
 
 
