@@ -17,6 +17,8 @@
 Smoketests for SMTP handler (amane.cmd.smtpd)
 """
 
+import argparse
+import asyncore
 from datetime import datetime
 import email
 from os.path import dirname, join
@@ -24,10 +26,7 @@ import random
 import time
 import smtpd
 import unittest
-try:
-    from unittest import mock
-except:
-    import mock
+from unittest import mock
 
 import amane
 from amane import const
@@ -1135,3 +1134,30 @@ class SendPostTest(unittest.TestCase):
                 'Test3 <test3@example.com>, Test4 <test4@example.com>')
             self.assertEqual(message['subject'],
                              '=?iso-2022-jp?b?W21sLTAwMDAxMF0gdGVzdA==?=')
+
+class ZMainTest(unittest.TestCase):
+    """main() tests"""
+
+    @mock.patch('amane.db', fake_db)
+    def run(self, result=None):
+        return super().run(result=result)
+
+    @mock.patch.object(asyncore, 'loop')
+    @mock.patch.object(argparse.ArgumentParser, 'parse_args')
+    @mock.patch('amane.cmd.smtpd.AmaneSMTPServer', autospec=True)
+    def test_main(self, mock_AmaneSMTPServer, mock_parse_args, mock_loop):
+        mock_parse_args.return_value = \
+            mock.MagicMock(version=False, debug=False,
+                           config_file=open('sample/amane.conf'))
+        from amane.cmd import smtpd
+        smtpd.main()
+
+    @mock.patch.object(asyncore, 'loop')
+    @mock.patch.object(argparse.ArgumentParser, 'parse_args')
+    @mock.patch('amane.cmd.smtpd.AmaneSMTPServer', autospec=True)
+    def test_main_version(self, mock_AmaneSMTPServer, mock_parse_args, mock_loop):
+        mock_parse_args.return_value = \
+            mock.MagicMock(version=True, debug=False,
+                           config_file=open('sample/amane.conf'))
+        from amane.cmd import smtpd
+        smtpd.main()
