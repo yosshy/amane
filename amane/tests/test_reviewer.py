@@ -17,6 +17,7 @@
 Smoketests for reviewer (amane.cmd.reviewer)
 """
 
+import argparse
 from datetime import datetime
 import email
 from os.path import dirname, join
@@ -24,21 +25,13 @@ import random
 import time
 import smtpd
 import unittest
-try:
-    from unittest import mock
-except:
-    import mock
+from unittest import mock
 
 from amane import const
 from amane.tests import fake_db
 
 
 ML_NAME = "test-%06d"
-
-
-class DummySMTPServer(object):
-    def __init__(self, localaddr, localport, **kwargs):
-        pass
 
 
 class DummySMTPClient(object):
@@ -59,7 +52,9 @@ class NotifyTest(unittest.TestCase):
     """notify() tests"""
 
     @mock.patch('amane.db', fake_db)
-    @mock.patch('smtpd.SMTPServer', DummySMTPServer)
+    def run(self, result=None):
+        return super().run(result=result)
+
     def setUp(self):
         self.db_name = "test%04d" % random.randint(0, 1000)
         self.ml_name_arg = None
@@ -76,8 +71,6 @@ class NotifyTest(unittest.TestCase):
         self.members_arg = members
         self.charset_arg = charset
 
-    @mock.patch('amane.db', fake_db)
-    @mock.patch('smtpd.SMTPServer', DummySMTPServer)
     def _test(self, old_status, new_status, days, altered):
         self.tenant_name = "tenant1"
         config = {
@@ -154,7 +147,9 @@ class SendPostTest(unittest.TestCase):
     """send_post() tests"""
 
     @mock.patch('amane.db', fake_db)
-    @mock.patch('smtpd.SMTPServer', DummySMTPServer)
+    def run(self, result=None):
+        return super().run(result=result)
+
     def setUp(self):
         self.db_name = "test%04d" % random.randint(0, 1000)
         self.tenant_name = "tenant1"
@@ -199,8 +194,9 @@ class SendPostTest(unittest.TestCase):
         self.members = members
         self.message = message
 
-    @mock.patch('amane.cmd.reviewer.smtplib.SMTP', DummySMTPClient)
-    def test_no_cc(self):
+    #@mock.patch('amane.cmd.reviewer.smtplib.SMTP', autospec=True)
+    @mock.patch('smtplib.SMTP', autospec=True)
+    def test_send_post(self, mock_SMTP):
         members = {"test1@example.com", "test2@example.com",
                    "test3@example.com", "test4@example.com"}
         fake_db.create_ml(self.tenant_name, 'ml-000010', "hoge", members,
@@ -218,15 +214,32 @@ class SendPostTest(unittest.TestCase):
               'Test mail\n' \
               '\n' \
               '--hoge\n'
-        msg_obj = email.message_from_string(msg)
 
-        with mock.patch.object(DummySMTPClient, 'sendmail') as m:
-            m.side_effect = self._sendmail
-            self.reviewer.send_post('ml-000010', "subject", msg, members, "iso-2022-jp")
-            self.assertEqual(self.members, members)
-            message = email.message_from_string(self.message)
-            self.assertEqual(message['to'], 'ml-000010@example.net')
-            self.assertEqual(message['reply-to'], 'ml-000010@example.net')
-            self.assertEqual(message.get('cc', ''), '')
-            self.assertEqual(message['subject'],
-                             '=?iso-2022-jp?b?c3ViamVjdA==?=')
+        self.reviewer.send_post('ml-000010', "subject", msg, members, "iso-2022-jp")
+        mock_SMTP.assert_called_with('localhost', 1025)
+
+
+class MainTest(unittest.TestCase):
+    """main() tests"""
+
+    @mock.patch('amane.db', fake_db)
+    def run(self, result=None):
+        return super().run(result=result)
+
+    @mock.patch.object(argparse.ArgumentParser, 'parse_args')
+    @mock.patch('amane.cmd.reviewer.Reviewer', autospec=True)
+    def test_main(self, mock_Reviewer, mock_parse_args):
+        mock_parse_args.return_value = \
+            mock.MagicMock(version=False, debug=False,
+                           config_file=open('sample/amane.conf'))
+        from amane.cmd import reviewer
+        reviewer.main()
+
+    @mock.patch.object(argparse.ArgumentParser, 'parse_args')
+    @mock.patch('amane.cmd.reviewer.Reviewer', autospec=True)
+    def test_main_version(self, mock_Reviewer, mock_parse_args):
+        mock_parse_args.return_value = \
+            mock.MagicMock(version=True, debug=False,
+                           config_file=open('sample/amane.conf'))
+        from amane.cmd import reviewer
+        reviewer.main()

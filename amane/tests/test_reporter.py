@@ -17,6 +17,7 @@
 Smoketests for statistics reporter (amane.cmd.reporter)
 """
 
+import argparse
 from datetime import datetime
 import email
 import logging
@@ -230,3 +231,29 @@ class ProcessMessageTest(unittest.TestCase):
         fake_db.create_ml(self.tenant_name, 'ml-000012', "hoge", members,
                           "test1@example.com")
         self._test_report(['ml-000010', 'ml-000011', 'ml-000012'], [], [], [])
+
+
+class MainTest(unittest.TestCase):
+    """main() tests"""
+
+    @mock.patch('amane.db', fake_db)
+    def run(self, result=None):
+        return super().run(result=result)
+
+    @mock.patch.object(argparse.ArgumentParser, 'parse_args')
+    @mock.patch.object(amane.cmd.reporter, 'report_status')
+    def test_main(self, mock_report_status, mock_parse_args):
+        mock_parse_args.return_value = \
+            mock.MagicMock(version=False, debug=False,
+                           config_file=open('sample/amane.conf'))
+        from amane.cmd import reporter
+        reporter.main()
+
+    @mock.patch.object(argparse.ArgumentParser, 'parse_args')
+    @mock.patch.object(amane.cmd.reporter, 'report_status')
+    def test_main_version(self, mock_report_status, mock_parse_args):
+        mock_parse_args.return_value = \
+            mock.MagicMock(version=True, debug=False,
+                           config_file=open('sample/amane.conf'))
+        from amane.cmd import reporter
+        reporter.main()
