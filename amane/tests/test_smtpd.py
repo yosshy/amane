@@ -1135,6 +1135,7 @@ class SendPostTest(unittest.TestCase):
             self.assertEqual(message['subject'],
                              '=?iso-2022-jp?b?W21sLTAwMDAxMF0gdGVzdA==?=')
 
+
 class ZMainTest(unittest.TestCase):
     """main() tests"""
 
@@ -1155,7 +1156,8 @@ class ZMainTest(unittest.TestCase):
     @mock.patch.object(asyncore, 'loop')
     @mock.patch.object(argparse.ArgumentParser, 'parse_args')
     @mock.patch('amane.cmd.smtpd.AmaneSMTPServer', autospec=True)
-    def test_main_version(self, mock_AmaneSMTPServer, mock_parse_args, mock_loop):
+    def test_main_version(self, mock_AmaneSMTPServer, mock_parse_args,
+                          mock_loop):
         mock_parse_args.return_value = \
             mock.MagicMock(version=True, debug=False,
                            config_file=open('sample/amane.conf'))
