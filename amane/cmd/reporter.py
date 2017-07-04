@@ -21,7 +21,6 @@ import argparse
 from datetime import datetime, timedelta
 from email.message import Message
 from email.header import Header
-import email_normalize
 from jinja2 import Environment
 import logging
 import os
@@ -38,19 +37,6 @@ from amane import log
 
 CONFIG_FILE = os.environ.get("AMANE_CONFIG_FILE", "/etc/amane/amane.conf")
 ERROR_RETURN = 'amane-error'
-
-
-def normalize(addresses):
-    logging.debug(addresses)
-    result = []
-    for address in addresses:
-        try:
-            cleaned = email_normalize.normalize(address, resolve=False)
-            if isinstance(cleaned, str):
-                result.append(cleaned)
-        except:
-            pass
-    return set(result)
 
 
 def convert(data):

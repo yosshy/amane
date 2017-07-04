@@ -1,6 +1,17 @@
 CHANGES
 =======
 
+* PEP8
+* smtpd: improved coverage
+* reporter: removed normalize()
+* reporter: improved coverage
+* reviewer: improved coverage
+* reviewer: use run() for mocking
+
+1.0.0
+-----
+
+* ChangeLog: updated
 * reviewer: improved coverage
 * ctl: fixed exit status bugs
 * setup: modified Environment
